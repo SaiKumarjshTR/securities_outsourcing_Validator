@@ -1,0 +1,1941 @@
+{
+  "version": "1.0",
+  "total_docs": 98,
+  "overall": {
+    "doc_count": 98,
+    "word_count": {
+      "mean": 4150.867346938776,
+      "std": 6205.889958441151,
+      "min": 49,
+      "max": 34668,
+      "p10": 270,
+      "p90": 14708
+    },
+    "nesting_depth": {
+      "mean": 24.846938775510203,
+      "std": 49.038167567559114,
+      "max": 354
+    },
+    "common_tags": [
+      "BLOCK2",
+      "BOLD",
+      "DATE",
+      "EM",
+      "FREEFORM",
+      "LINE",
+      "N",
+      "P",
+      "POLIDENT",
+      "POLIDOC",
+      "TI",
+      "P1"
+    ],
+    "label_distribution": {
+      "CSA Staff Notice": 11,
+      "Superintendent Order": 8,
+      "Circular": 7,
+      "CIRO Bulletin": 5,
+      "CSA Notice": 5,
+      "ASC Notice": 4,
+      "Advisory Notice": 4,
+      "Policy Statement to Regulation": 4,
+      "OSC Staff Notice": 3,
+      "National Instrument": 3
+    }
+  },
+  "by_jurisdiction": {
+    "Ontario": {
+      "doc_count": 11,
+      "word_count": {
+        "mean": 9072.181818181818,
+        "std": 7357.163927618525,
+        "min": 1362,
+        "max": 19360,
+        "p10": 1736,
+        "p90": 19320
+      },
+      "nesting_depth": {
+        "mean": 50.0,
+        "std": 96.88981558263161,
+        "max": 354
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BLOCK3",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FOOTNOTE",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "QUOTE",
+        "TI",
+        "CITE",
+        "P1"
+      ],
+      "label_distribution": {
+        "OSC Staff Notice": 3,
+        "CSA Staff Notice": 3,
+        "OSC Rule": 3,
+        "CSA Multilateral Staff Notice": 1,
+        "JCSA / CIRO Staff Notice": 1
+      }
+    },
+    "Alberta": {
+      "doc_count": 9,
+      "word_count": {
+        "mean": 1750.0,
+        "std": 1308.379999167758,
+        "min": 293,
+        "max": 4712,
+        "p10": 293,
+        "p90": 4712
+      },
+      "nesting_depth": {
+        "mean": 11.555555555555555,
+        "std": 5.209203630991574,
+        "max": 25
+      },
+      "common_tags": [
+        "EM",
+        "FREEFORM",
+        "N",
+        "P",
+        "PARA",
+        "PARAP",
+        "POLIDENT",
+        "POLIDOC",
+        "QUOTE",
+        "TI",
+        "DATE",
+        "P1",
+        "BLOCK2",
+        "BOLD",
+        "LINE"
+      ],
+      "label_distribution": {
+        "ASC Notice": 4,
+        "ASC Coordinated Blanket Order": 3,
+        "National Instrument": 2
+      }
+    },
+    "British_Columbia": {
+      "doc_count": 10,
+      "word_count": {
+        "mean": 4820.0,
+        "std": 4454.733774312444,
+        "min": 271,
+        "max": 15319,
+        "p10": 707,
+        "p90": 15319
+      },
+      "nesting_depth": {
+        "mean": 27.4,
+        "std": 28.185812033716537,
+        "max": 84
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BLOCK3",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FOOTNOTE",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "POLIDENT",
+        "POLIDOC",
+        "TI"
+      ],
+      "label_distribution": {
+        "CSA Staff Notice": 2,
+        "BCSC Coordinated Blanket Order": 2,
+        "CSA Staff Notice and Consultation": 1,
+        "CSA Multilateral Discussion Paper": 1,
+        "BC Policy": 1,
+        "BC Notice": 1,
+        "JCSA and CIRO Staff Notice": 1,
+        "BC Instrument": 1
+      }
+    },
+    "CIRO": {
+      "doc_count": 5,
+      "word_count": {
+        "mean": 8672.2,
+        "std": 13274.834679196574,
+        "min": 327,
+        "max": 34668,
+        "p10": 327,
+        "p90": 34668
+      },
+      "nesting_depth": {
+        "mean": 63.4,
+        "std": 93.51705726764503,
+        "max": 250
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FOOTNOTE",
+        "FREEFORM",
+        "LINE",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "SGMLTBL",
+        "TABLE",
+        "TBLBODY",
+        "TBLCDEF",
+        "TBLCDEFS",
+        "TBLCELL",
+        "TBLHEAD",
+        "TBLROW",
+        "TBLROWS",
+        "TI",
+        "ITEM",
+        "P1"
+      ],
+      "label_distribution": {
+        "CIRO Bulletin": 5
+      }
+    },
+    "Manitoba": {
+      "doc_count": 4,
+      "word_count": {
+        "mean": 1649.25,
+        "std": 1020.7534900748565,
+        "min": 427,
+        "max": 3094,
+        "p10": 427,
+        "p90": 3094
+      },
+      "nesting_depth": {
+        "mean": 13.5,
+        "std": 1.5,
+        "max": 16
+      },
+      "common_tags": [
+        "BLOCK1",
+        "CITE",
+        "DATE",
+        "DEF",
+        "DEFP",
+        "FREEFORM",
+        "LEGIDDOC",
+        "N",
+        "P",
+        "PARA",
+        "PARAP",
+        "PART",
+        "POLIDENT",
+        "POLIDOC",
+        "QUOTE",
+        "SEC",
+        "SECP",
+        "STATREF",
+        "TERM",
+        "TI",
+        "EM",
+        "P1",
+        "BLOCK2",
+        "BOLD",
+        "LINE",
+        "SGMLTBL",
+        "TABLE",
+        "TBLBODY",
+        "TBLCDEF",
+        "TBLCDEFS",
+        "TBLCELL",
+        "TBLROW",
+        "TBLROWS"
+      ],
+      "label_distribution": {
+        "MSC Coordinated Blanket Order": 2,
+        "MSC Local Rule": 1,
+        "MSC Rule": 1
+      }
+    },
+    "Montreal": {
+      "doc_count": 11,
+      "word_count": {
+        "mean": 3103.6363636363635,
+        "std": 5163.013272265216,
+        "min": 80,
+        "max": 18203,
+        "p10": 422,
+        "p90": 6082
+      },
+      "nesting_depth": {
+        "mean": 41.09090909090909,
+        "std": 58.814739255725755,
+        "max": 222
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "LINE",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "SGMLTBL",
+        "TABLE",
+        "TBLBODY",
+        "TBLCDEF",
+        "TBLCDEFS",
+        "TBLCELL",
+        "TBLHEAD",
+        "TBLROW",
+        "TBLROWS",
+        "TI"
+      ],
+      "label_distribution": {
+        "Circular": 7,
+        "Advisory Notice": 4
+      }
+    },
+    "New_Brunswick": {
+      "doc_count": 3,
+      "word_count": {
+        "mean": 8710.333333333334,
+        "std": 5275.657073346935,
+        "min": 1863,
+        "max": 14700,
+        "p10": 1863,
+        "p90": 14700
+      },
+      "nesting_depth": {
+        "mean": 26.666666666666668,
+        "std": 22.21611027060218,
+        "max": 58
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BLOCK3",
+        "BLOCK4",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "APPENDIX",
+        "PARA",
+        "PARAP",
+        "QUOTE",
+        "SEC",
+        "SECP",
+        "SSEC",
+        "SSECP"
+      ],
+      "label_distribution": {
+        "Joint CSA / CIRO Staff Notice": 1,
+        "CSA Notice": 1,
+        "Multilateral Instrument": 1
+      }
+    },
+    "Newfoundland": {
+      "doc_count": 5,
+      "word_count": {
+        "mean": 1799.6,
+        "std": 1472.829874764903,
+        "min": 283,
+        "max": 4467,
+        "p10": 283,
+        "p90": 4467
+      },
+      "nesting_depth": {
+        "mean": 9.0,
+        "std": 2.280350850198276,
+        "max": 11
+      },
+      "common_tags": [
+        "BLOCK1",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "LINE",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "QUOTE",
+        "TI",
+        "BLOCK2",
+        "P1",
+        "SUP"
+      ],
+      "label_distribution": {
+        "Superintendent Order": 5
+      }
+    },
+    "Nova_Scotia": {
+      "doc_count": 4,
+      "word_count": {
+        "mean": 2094.0,
+        "std": 1410.824758784733,
+        "min": 933,
+        "max": 4503,
+        "p10": 933,
+        "p90": 4503
+      },
+      "nesting_depth": {
+        "mean": 11.5,
+        "std": 6.06217782649107,
+        "max": 22
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FOOTNOTE",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "POLIDENT",
+        "POLIDOC",
+        "SUP",
+        "TI"
+      ],
+      "label_distribution": {
+        "CSA Staff Notice": 3,
+        "Blanket Order": 1
+      }
+    },
+    "NWT": {
+      "doc_count": 3,
+      "word_count": {
+        "mean": 1898.0,
+        "std": 1106.5751970230792,
+        "min": 395,
+        "max": 3027,
+        "p10": 395,
+        "p90": 3027
+      },
+      "nesting_depth": {
+        "mean": 9.333333333333334,
+        "std": 2.8674417556808756,
+        "max": 13
+      },
+      "common_tags": [
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "BLOCK1"
+      ],
+      "label_distribution": {
+        "CSA Staff Notice": 2,
+        "National Instrument": 1
+      }
+    },
+    "PEI": {
+      "doc_count": 3,
+      "word_count": {
+        "mean": 431.3333333333333,
+        "std": 477.9151482103166,
+        "min": 79,
+        "max": 1107,
+        "p10": 79,
+        "p90": 1107
+      },
+      "nesting_depth": {
+        "mean": 12.333333333333334,
+        "std": 4.027681991198191,
+        "max": 18
+      },
+      "common_tags": [
+        "BLOCK1",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "LEGIDDOC",
+        "MISCLAW",
+        "PART",
+        "QUOTE",
+        "SEC",
+        "SECP",
+        "TERM"
+      ],
+      "label_distribution": {
+        "Rule": 3
+      }
+    },
+    "Quebec": {
+      "doc_count": 10,
+      "word_count": {
+        "mean": 7997.1,
+        "std": 7718.866464060639,
+        "min": 514,
+        "max": 24185,
+        "p10": 933,
+        "p90": 24185
+      },
+      "nesting_depth": {
+        "mean": 13.1,
+        "std": 5.717516943569122,
+        "max": 25
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BLOCK3",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "ITEM",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "BOLD",
+        "FOOTNOTE",
+        "LINE",
+        "P1",
+        "BLOCK4"
+      ],
+      "label_distribution": {
+        "Policy Statement to Regulation": 4,
+        "CSA Notice": 4,
+        "CSA Staff Notice": 1,
+        "Joint CSA / CIRO Staff Notice": 1
+      }
+    },
+    "Saskatchewan": {
+      "doc_count": 2,
+      "word_count": {
+        "mean": 1760.5,
+        "std": 1468.5,
+        "min": 292,
+        "max": 3229,
+        "p10": 292,
+        "p90": 3229
+      },
+      "nesting_depth": {
+        "mean": 8.5,
+        "std": 0.5,
+        "max": 9
+      },
+      "common_tags": [
+        "BLOCK1",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "BLOCK2",
+        "PARA",
+        "PARAP",
+        "QUOTE"
+      ],
+      "label_distribution": {
+        "General Ruling/Order": 1,
+        "Notice": 1
+      }
+    },
+    "TSX": {
+      "doc_count": 15,
+      "word_count": {
+        "mean": 1474.0666666666666,
+        "std": 3221.309598422494,
+        "min": 49,
+        "max": 13023,
+        "p10": 89,
+        "p90": 3909
+      },
+      "nesting_depth": {
+        "mean": 17.6,
+        "std": 31.073675890266564,
+        "max": 131
+      },
+      "common_tags": [
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "TI"
+      ],
+      "label_distribution": {
+        "TMX Equity Trading Notice": 3,
+        "TMX Production Alert": 2,
+        "TMX Operational Notice": 2,
+        "Article": 2,
+        "Form": 2,
+        "Staff Notice": 2,
+        "TMX Product Announcement": 1,
+        "[Appendices]": 1
+      }
+    },
+    "Yukon": {
+      "doc_count": 3,
+      "word_count": {
+        "mean": 949.0,
+        "std": 499.6738936546515,
+        "min": 270,
+        "max": 1458,
+        "p10": 270,
+        "p90": 1458
+      },
+      "nesting_depth": {
+        "mean": 12.0,
+        "std": 4.320493798938574,
+        "max": 18
+      },
+      "common_tags": [
+        "BLOCK1",
+        "BLOCK2",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FREEFORM",
+        "LINE",
+        "N",
+        "P",
+        "P1",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "BLOCK0"
+      ],
+      "label_distribution": {
+        "Superintendent Order": 3
+      }
+    }
+  },
+  "by_doc_type": {
+    "notice": {
+      "doc_count": 57,
+      "word_count": {
+        "mean": 4573.964912280701,
+        "std": 6887.242538799002,
+        "min": 49,
+        "max": 34668,
+        "p10": 236,
+        "p90": 15319
+      },
+      "nesting_depth": {
+        "mean": 31.982456140350877,
+        "std": 61.016676244550446,
+        "max": 354
+      },
+      "common_tags": [
+        "BLOCK2",
+        "BOLD",
+        "DATE",
+        "EM",
+        "FOOTNOTE",
+        "FREEFORM",
+        "ITEM",
+        "LINE",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "TI",
+        "P1"
+      ],
+      "label_distribution": {
+        "CSA Staff Notice": 11,
+        "Circular": 6,
+        "CIRO Bulletin": 5,
+        "Advisory Notice": 4,
+        "CSA Notice": 4,
+        "OSC Staff Notice": 3,
+        "TMX Equity Trading Notice": 3,
+        "ASC Notice": 2,
+        "Joint CSA / CIRO Staff Notice": 2,
+        "TMX Production Alert": 2
+      }
+    },
+    "instrument": {
+      "doc_count": 41,
+      "word_count": {
+        "mean": 3562.6585365853657,
+        "std": 5051.315663486417,
+        "min": 79,
+        "max": 24185,
+        "p10": 283,
+        "p90": 9568
+      },
+      "nesting_depth": {
+        "mean": 14.926829268292684,
+        "std": 20.069866070624435,
+        "max": 131
+      },
+      "common_tags": [
+        "EM",
+        "FREEFORM",
+        "N",
+        "P",
+        "POLIDENT",
+        "POLIDOC",
+        "QUOTE",
+        "TI",
+        "BLOCK1",
+        "DATE",
+        "P1",
+        "BLOCK2",
+        "BOLD",
+        "LINE"
+      ],
+      "label_distribution": {
+        "Superintendent Order": 8,
+        "Policy Statement to Regulation": 4,
+        "National Instrument": 3,
+        "ASC Coordinated Blanket Order": 3,
+        "OSC Rule": 3,
+        "Rule": 3,
+        "ASC Notice": 2,
+        "BCSC Coordinated Blanket Order": 2,
+        "MSC Coordinated Blanket Order": 2,
+        "Article": 2
+      }
+    }
+  },
+  "by_jurisdiction_and_type": {
+    "Ontario": {
+      "notice": {
+        "doc_count": 8,
+        "word_count": {
+          "mean": 10104.0,
+          "std": 8202.005562665756,
+          "min": 1362,
+          "max": 19360,
+          "p10": 1362,
+          "p90": 19360
+        },
+        "nesting_depth": {
+          "mean": 64.0,
+          "std": 110.40493648383662,
+          "max": 354
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BLOCK3",
+          "BLOCK4",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SGMLTBL",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLHEAD",
+          "TBLROW",
+          "TBLROWS",
+          "TI",
+          "CITE",
+          "P1"
+        ],
+        "label_distribution": {
+          "OSC Staff Notice": 3,
+          "CSA Staff Notice": 3,
+          "CSA Multilateral Staff Notice": 1,
+          "JCSA / CIRO Staff Notice": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 6320.666666666667,
+          "std": 2943.558655022107,
+          "min": 2158,
+          "max": 8433,
+          "p10": 2158,
+          "p90": 8433
+        },
+        "nesting_depth": {
+          "mean": 12.666666666666666,
+          "std": 0.4714045207910317,
+          "max": 13
+        },
+        "common_tags": [
+          "BLOCK0",
+          "BLOCK1",
+          "BLOCK2",
+          "BLOCK3",
+          "BOLD",
+          "CITE",
+          "DATE",
+          "DEF",
+          "DEFP",
+          "DF",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "N",
+          "P",
+          "P1",
+          "PARA",
+          "PARAP",
+          "PART",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "SSEC",
+          "SSECP",
+          "TERM",
+          "TI"
+        ],
+        "label_distribution": {
+          "OSC Rule": 3
+        }
+      }
+    },
+    "Alberta": {
+      "notice": {
+        "doc_count": 2,
+        "word_count": {
+          "mean": 2502.5,
+          "std": 2209.5,
+          "min": 293,
+          "max": 4712,
+          "p10": 293,
+          "p90": 4712
+        },
+        "nesting_depth": {
+          "mean": 16.5,
+          "std": 8.5,
+          "max": 25
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "BLOCK1",
+          "ITEM",
+          "SGMLTBL",
+          "SUP",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLHEAD",
+          "TBLNOTE",
+          "TBLNOTES",
+          "TBLROW",
+          "TBLROWS"
+        ],
+        "label_distribution": {
+          "ASC Notice": 2
+        }
+      },
+      "instrument": {
+        "doc_count": 7,
+        "word_count": {
+          "mean": 1535.0,
+          "std": 773.3836601029826,
+          "min": 645,
+          "max": 3040,
+          "p10": 645,
+          "p90": 3040
+        },
+        "nesting_depth": {
+          "mean": 10.142857142857142,
+          "std": 2.2946254863155726,
+          "max": 14
+        },
+        "common_tags": [
+          "EM",
+          "FREEFORM",
+          "N",
+          "P",
+          "PARA",
+          "PARAP",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "TI",
+          "DATE",
+          "P1",
+          "BLOCK2",
+          "BOLD",
+          "LINE"
+        ],
+        "label_distribution": {
+          "ASC Coordinated Blanket Order": 3,
+          "National Instrument": 2,
+          "ASC Notice": 2
+        }
+      }
+    },
+    "British_Columbia": {
+      "notice": {
+        "doc_count": 7,
+        "word_count": {
+          "mean": 6575.428571428572,
+          "std": 4246.618179114255,
+          "min": 707,
+          "max": 15319,
+          "p10": 707,
+          "p90": 15319
+        },
+        "nesting_depth": {
+          "mean": 34.857142857142854,
+          "std": 30.586778522887357,
+          "max": 84
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BLOCK3",
+          "BLOCK4",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "CSA Staff Notice": 2,
+          "CSA Staff Notice and Consultation": 1,
+          "CSA Multilateral Discussion Paper": 1,
+          "BC Policy": 1,
+          "BC Notice": 1,
+          "JCSA and CIRO Staff Notice": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 724.0,
+          "std": 320.3196320344207,
+          "min": 271,
+          "max": 951,
+          "p10": 271,
+          "p90": 951
+        },
+        "nesting_depth": {
+          "mean": 10.0,
+          "std": 5.715476066494082,
+          "max": 18
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "P1"
+        ],
+        "label_distribution": {
+          "BCSC Coordinated Blanket Order": 2,
+          "BC Instrument": 1
+        }
+      }
+    },
+    "CIRO": {
+      "notice": {
+        "doc_count": 5,
+        "word_count": {
+          "mean": 8672.2,
+          "std": 13274.834679196574,
+          "min": 327,
+          "max": 34668,
+          "p10": 327,
+          "p90": 34668
+        },
+        "nesting_depth": {
+          "mean": 63.4,
+          "std": 93.51705726764503,
+          "max": 250
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "SGMLTBL",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLHEAD",
+          "TBLROW",
+          "TBLROWS",
+          "TI",
+          "ITEM",
+          "P1"
+        ],
+        "label_distribution": {
+          "CIRO Bulletin": 5
+        }
+      },
+      "instrument": {}
+    },
+    "Manitoba": {
+      "notice": {},
+      "instrument": {
+        "doc_count": 4,
+        "word_count": {
+          "mean": 1649.25,
+          "std": 1020.7534900748565,
+          "min": 427,
+          "max": 3094,
+          "p10": 427,
+          "p90": 3094
+        },
+        "nesting_depth": {
+          "mean": 13.5,
+          "std": 1.5,
+          "max": 16
+        },
+        "common_tags": [
+          "BLOCK1",
+          "CITE",
+          "DATE",
+          "DEF",
+          "DEFP",
+          "FREEFORM",
+          "LEGIDDOC",
+          "N",
+          "P",
+          "PARA",
+          "PARAP",
+          "PART",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "STATREF",
+          "TERM",
+          "TI",
+          "EM",
+          "P1",
+          "BLOCK2",
+          "BOLD",
+          "LINE",
+          "SGMLTBL",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLROW",
+          "TBLROWS"
+        ],
+        "label_distribution": {
+          "MSC Coordinated Blanket Order": 2,
+          "MSC Local Rule": 1,
+          "MSC Rule": 1
+        }
+      }
+    },
+    "Montreal": {
+      "notice": {
+        "doc_count": 10,
+        "word_count": {
+          "mean": 1593.7,
+          "std": 2059.949176557519,
+          "min": 80,
+          "max": 6082,
+          "p10": 422,
+          "p90": 6082
+        },
+        "nesting_depth": {
+          "mean": 43.6,
+          "std": 61.12151830574892,
+          "max": 222
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "SGMLTBL",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLHEAD",
+          "TBLROW",
+          "TBLROWS",
+          "TI"
+        ],
+        "label_distribution": {
+          "Circular": 6,
+          "Advisory Notice": 4
+        }
+      },
+      "instrument": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 18203.0,
+          "std": 0.0,
+          "min": 18203,
+          "max": 18203,
+          "p10": 18203,
+          "p90": 18203
+        },
+        "nesting_depth": {
+          "mean": 16.0,
+          "std": 0.0,
+          "max": 16
+        },
+        "common_tags": [
+          "APPENDIX",
+          "ARTICLE",
+          "BLOCK1",
+          "BLOCK2",
+          "BLOCK3",
+          "BLOCK4",
+          "BOLD",
+          "CHAPTER",
+          "CL",
+          "CLP",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "MDIV1",
+          "N",
+          "P",
+          "P1",
+          "PARA",
+          "PARAP",
+          "PART",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "REFN",
+          "SECP",
+          "SPARA",
+          "SPARAP",
+          "STATHIST",
+          "STATREF",
+          "STRIKE",
+          "TI"
+        ],
+        "label_distribution": {
+          "Circular": 1
+        }
+      }
+    },
+    "New_Brunswick": {
+      "notice": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 14700.0,
+          "std": 0.0,
+          "min": 14700,
+          "max": 14700,
+          "p10": 14700,
+          "p90": 14700
+        },
+        "nesting_depth": {
+          "mean": 13.0,
+          "std": 0.0,
+          "max": 13
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BLOCK3",
+          "BLOCK4",
+          "BLOCK5",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "Joint CSA / CIRO Staff Notice": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 2,
+        "word_count": {
+          "mean": 5715.5,
+          "std": 3852.5,
+          "min": 1863,
+          "max": 9568,
+          "p10": 1863,
+          "p90": 9568
+        },
+        "nesting_depth": {
+          "mean": 33.5,
+          "std": 24.5,
+          "max": 58
+        },
+        "common_tags": [
+          "APPENDIX",
+          "BLOCK1",
+          "BLOCK2",
+          "BLOCK3",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "P2",
+          "PARA",
+          "PARAP",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "SGMLTBL",
+          "SPARA",
+          "SPARAP",
+          "SSEC",
+          "SSECP",
+          "TABLE",
+          "TBLBODY",
+          "TBLCDEF",
+          "TBLCDEFS",
+          "TBLCELL",
+          "TBLHEAD",
+          "TBLROW",
+          "TBLROWS",
+          "TI",
+          "BLOCK4",
+          "TERM"
+        ],
+        "label_distribution": {
+          "CSA Notice": 1,
+          "Multilateral Instrument": 1
+        }
+      }
+    },
+    "Newfoundland": {
+      "notice": {},
+      "instrument": {
+        "doc_count": 5,
+        "word_count": {
+          "mean": 1799.6,
+          "std": 1472.829874764903,
+          "min": 283,
+          "max": 4467,
+          "p10": 283,
+          "p90": 4467
+        },
+        "nesting_depth": {
+          "mean": 9.0,
+          "std": 2.280350850198276,
+          "max": 11
+        },
+        "common_tags": [
+          "BLOCK1",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "TI",
+          "BLOCK2",
+          "P1",
+          "SUP"
+        ],
+        "label_distribution": {
+          "Superintendent Order": 5
+        }
+      }
+    },
+    "Nova_Scotia": {
+      "notice": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 2260.0,
+          "std": 1594.8912188610232,
+          "min": 933,
+          "max": 4503,
+          "p10": 933,
+          "p90": 4503
+        },
+        "nesting_depth": {
+          "mean": 12.666666666666666,
+          "std": 6.599663291074444,
+          "max": 22
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "CSA Staff Notice": 3
+        }
+      },
+      "instrument": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 1596.0,
+          "std": 0.0,
+          "min": 1596,
+          "max": 1596,
+          "p10": 1596,
+          "p90": 1596
+        },
+        "nesting_depth": {
+          "mean": 8.0,
+          "std": 0.0,
+          "max": 8
+        },
+        "common_tags": [
+          "BLOCK0",
+          "BLOCK1",
+          "BLOCK2",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "REFN",
+          "STATREF",
+          "SUP",
+          "TI"
+        ],
+        "label_distribution": {
+          "Blanket Order": 1
+        }
+      }
+    },
+    "NWT": {
+      "notice": {
+        "doc_count": 2,
+        "word_count": {
+          "mean": 1333.5,
+          "std": 938.5,
+          "min": 395,
+          "max": 2272,
+          "p10": 395,
+          "p90": 2272
+        },
+        "nesting_depth": {
+          "mean": 7.5,
+          "std": 1.5,
+          "max": 9
+        },
+        "common_tags": [
+          "BLOCK2",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "BLOCK1",
+          "BOLD"
+        ],
+        "label_distribution": {
+          "CSA Staff Notice": 2
+        }
+      },
+      "instrument": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 3027.0,
+          "std": 0.0,
+          "min": 3027,
+          "max": 3027,
+          "p10": 3027,
+          "p90": 3027
+        },
+        "nesting_depth": {
+          "mean": 13.0,
+          "std": 0.0,
+          "max": 13
+        },
+        "common_tags": [
+          "BLOCK1",
+          "CONTAINR",
+          "DATE",
+          "DEF",
+          "DEFP",
+          "EM",
+          "FORM",
+          "FREEFORM",
+          "LEGIDDOC",
+          "LINE",
+          "MISCLAW",
+          "N",
+          "P",
+          "P1",
+          "P2",
+          "PARA",
+          "PARAP",
+          "PART",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "SPARA",
+          "SPARAP",
+          "TERM",
+          "TI"
+        ],
+        "label_distribution": {
+          "National Instrument": 1
+        }
+      }
+    },
+    "PEI": {
+      "notice": {},
+      "instrument": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 431.3333333333333,
+          "std": 477.9151482103166,
+          "min": 79,
+          "max": 1107,
+          "p10": 79,
+          "p90": 1107
+        },
+        "nesting_depth": {
+          "mean": 12.333333333333334,
+          "std": 4.027681991198191,
+          "max": 18
+        },
+        "common_tags": [
+          "BLOCK1",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "LEGIDDOC",
+          "MISCLAW",
+          "PART",
+          "QUOTE",
+          "SEC",
+          "SECP",
+          "TERM"
+        ],
+        "label_distribution": {
+          "Rule": 3
+        }
+      }
+    },
+    "Quebec": {
+      "notice": {
+        "doc_count": 6,
+        "word_count": {
+          "mean": 6802.0,
+          "std": 6331.656760543273,
+          "min": 514,
+          "max": 16171,
+          "p10": 514,
+          "p90": 16171
+        },
+        "nesting_depth": {
+          "mean": 14.166666666666666,
+          "std": 6.066758241067099,
+          "max": 25
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BLOCK3",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FOOTNOTE",
+          "FREEFORM",
+          "ITEM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "CSA Notice": 4,
+          "CSA Staff Notice": 1,
+          "Joint CSA / CIRO Staff Notice": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 4,
+        "word_count": {
+          "mean": 9789.75,
+          "std": 9135.723435366244,
+          "min": 1525,
+          "max": 24185,
+          "p10": 1525,
+          "p90": 24185
+        },
+        "nesting_depth": {
+          "mean": 11.5,
+          "std": 4.716990566028302,
+          "max": 19
+        },
+        "common_tags": [
+          "BLOCK2",
+          "BLOCK3",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "ITEM",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "BLOCK4",
+          "FOOTNOTE"
+        ],
+        "label_distribution": {
+          "Policy Statement to Regulation": 4
+        }
+      }
+    },
+    "Saskatchewan": {
+      "notice": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 292.0,
+          "std": 0.0,
+          "min": 292,
+          "max": 292,
+          "p10": 292,
+          "p90": 292
+        },
+        "nesting_depth": {
+          "mean": 9.0,
+          "std": 0.0,
+          "max": 9
+        },
+        "common_tags": [
+          "BLOCK1",
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "P2",
+          "PARA",
+          "PARAP",
+          "POLIDENT",
+          "POLIDOC",
+          "QUOTE",
+          "TI"
+        ],
+        "label_distribution": {
+          "Notice": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 1,
+        "word_count": {
+          "mean": 3229.0,
+          "std": 0.0,
+          "min": 3229,
+          "max": 3229,
+          "p10": 3229,
+          "p90": 3229
+        },
+        "nesting_depth": {
+          "mean": 8.0,
+          "std": 0.0,
+          "max": 8
+        },
+        "common_tags": [
+          "BLOCK1",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "General Ruling/Order": 1
+        }
+      }
+    },
+    "TSX": {
+      "notice": {
+        "doc_count": 12,
+        "word_count": {
+          "mean": 358.5,
+          "std": 296.5657599926195,
+          "min": 49,
+          "max": 1070,
+          "p10": 89,
+          "p90": 733
+        },
+        "nesting_depth": {
+          "mean": 10.083333333333334,
+          "std": 7.499537022747174,
+          "max": 28
+        },
+        "common_tags": [
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "N",
+          "P",
+          "POLIDENT",
+          "POLIDOC",
+          "TI"
+        ],
+        "label_distribution": {
+          "TMX Equity Trading Notice": 3,
+          "TMX Production Alert": 2,
+          "TMX Operational Notice": 2,
+          "Form": 2,
+          "Staff Notice": 2,
+          "TMX Product Announcement": 1
+        }
+      },
+      "instrument": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 5936.333333333333,
+          "std": 5161.646335123019,
+          "min": 877,
+          "max": 13023,
+          "p10": 877,
+          "p90": 13023
+        },
+        "nesting_depth": {
+          "mean": 47.666666666666664,
+          "std": 58.931221681625516,
+          "max": 131
+        },
+        "common_tags": [
+          "ARTICLE",
+          "BOLD",
+          "CITE",
+          "EM",
+          "FREEFORM",
+          "LEGIDDOC",
+          "MISCLAW",
+          "N",
+          "P",
+          "PARA",
+          "PARAP",
+          "SEC",
+          "SECP",
+          "SPARA",
+          "SPARAP",
+          "SUP",
+          "TERM",
+          "TI"
+        ],
+        "label_distribution": {
+          "Article": 2,
+          "[Appendices]": 1
+        }
+      }
+    },
+    "Yukon": {
+      "notice": {},
+      "instrument": {
+        "doc_count": 3,
+        "word_count": {
+          "mean": 949.0,
+          "std": 499.6738936546515,
+          "min": 270,
+          "max": 1458,
+          "p10": 270,
+          "p90": 1458
+        },
+        "nesting_depth": {
+          "mean": 12.0,
+          "std": 4.320493798938574,
+          "max": 18
+        },
+        "common_tags": [
+          "BLOCK1",
+          "BLOCK2",
+          "BOLD",
+          "DATE",
+          "EM",
+          "FREEFORM",
+          "LINE",
+          "N",
+          "P",
+          "P1",
+          "POLIDENT",
+          "POLIDOC",
+          "TI",
+          "BLOCK0"
+        ],
+        "label_distribution": {
+          "Superintendent Order": 3
+        }
+      }
+    }
+  },
+  "known_labels": [
+    "ASC Coordinated Blanket Order",
+    "ASC Notice",
+    "Advisory Notice",
+    "Article",
+    "BC Instrument",
+    "BC Notice",
+    "BC Policy",
+    "BCSC Coordinated Blanket Order",
+    "Blanket Order",
+    "CIRO Bulletin",
+    "CSA Multilateral Discussion Paper",
+    "CSA Multilateral Staff Notice",
+    "CSA Notice",
+    "CSA Staff Notice",
+    "CSA Staff Notice and Consultation",
+    "Circular",
+    "Form",
+    "General Ruling/Order",
+    "JCSA / CIRO Staff Notice",
+    "JCSA and CIRO Staff Notice",
+    "Joint CSA / CIRO Staff Notice",
+    "MSC Coordinated Blanket Order",
+    "MSC Local Rule",
+    "MSC Rule",
+    "Multilateral Instrument",
+    "National Instrument",
+    "Notice",
+    "OSC Rule",
+    "OSC Staff Notice",
+    "Policy Statement to Regulation",
+    "Rule",
+    "Staff Notice",
+    "Superintendent Order",
+    "TMX Equity Trading Notice",
+    "TMX Operational Notice",
+    "TMX Product Announcement",
+    "TMX Production Alert",
+    "[Appendices]"
+  ],
+  "all_tags_seen": [
+    "ACTUNDER",
+    "APPENDIX",
+    "ARTICLE",
+    "BLOCK0",
+    "BLOCK1",
+    "BLOCK2",
+    "BLOCK3",
+    "BLOCK4",
+    "BLOCK5",
+    "BLOCK6",
+    "BOLD",
+    "CHAPTER",
+    "CITE",
+    "CL",
+    "CLP",
+    "CONTAINR",
+    "DATE",
+    "DEF",
+    "DEFP",
+    "DF",
+    "EDITNOTE",
+    "EM",
+    "FOOTNOTE",
+    "FORM",
+    "FREEFORM",
+    "GRAPHIC",
+    "ITEM",
+    "LEGIDDOC",
+    "LINE",
+    "LINKTEXT",
+    "MDIV",
+    "MDIV1",
+    "MISCLAW",
+    "N",
+    "P",
+    "P1",
+    "P2",
+    "P3",
+    "P4",
+    "PARA",
+    "PARAP",
+    "PART",
+    "POLIDENT",
+    "POLIDOC",
+    "QUOTE",
+    "REFN",
+    "REG",
+    "SCHEDDOC",
+    "SCL",
+    "SCLP",
+    "SEC",
+    "SECP",
+    "SGMLTBL",
+    "SPARA",
+    "SPARAP",
+    "SSEC",
+    "SSECP",
+    "STATHIST",
+    "STATREF",
+    "STRIKE",
+    "SUP",
+    "TABLE",
+    "TBLBODY",
+    "TBLCDEF",
+    "TBLCDEFS",
+    "TBLCELL",
+    "TBLHEAD",
+    "TBLNOTE",
+    "TBLNOTES",
+    "TBLROW",
+    "TBLROWS",
+    "TERM",
+    "TI"
+  ]
+}

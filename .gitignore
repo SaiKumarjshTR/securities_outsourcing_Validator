@@ -1,0 +1,39 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pdb
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Streamlit cache ───────────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── HITL decision log (runtime data — not source code) ────────────────────────
+decisions/*.jsonl
+
+# ── Temporary / OS ────────────────────────────────────────────────────────────
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+
+# ── Test outputs ──────────────────────────────────────────────────────────────
+htmlcov/
+.coverage
+.pytest_cache/

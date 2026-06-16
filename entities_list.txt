@@ -1,0 +1,258 @@
+<!-- PUBLIC "-//Carswell//ENTITIES Carswell//EN" -->
+<!--=======================================================================
+    rev. 4.3      C A R S W E L L    E N T I T I E S
+    =======================================================================-->
+
+<!-- Entity names are chosen from the ISO SGML entity sets.
+     Four-digit hex codes are UCS-2 codes.
+     Codes and names taken from ISO/IEC DIS 10646-1.2 dated
+     1991 December 26.  -->
+
+<!ENTITY Aacute SDATA "&Aacute;" > <!--LATIN CAPITAL LETTER A WITH ACUTE-->
+<!ENTITY aacute SDATA "&aacute;" > <!--LATIN SMALL LETTER A WITH ACUTE-->
+<!ENTITY Acirc  SDATA "&Acirc;"  > <!--LATIN CAPITAL LETTER A WITH CIRCUMFLEX-->
+<!ENTITY acirc  SDATA "&acirc;"  > <!--LATIN SMALL LETTER A WITH CIRCUMFLEX-->
+<!ENTITY AElig  SDATA "&AElig;"  > <!--LATIN CAPITAL AE DIPTHONG (LIGATURE)-->
+<!ENTITY aelig  SDATA "&aelig;"  > <!--LATIN SMALL AE DIPTHONG (LIGATURE)-->
+<!ENTITY Agrave SDATA "&Agrave;" > <!--LATIN CAPITAL LETTER A WITH GRAVE-->
+<!ENTITY agrave SDATA "&agrave;" > <!--LATIN SMALL LETTER A WITH GRAVE-->
+<!ENTITY alpha	SDATA "&alpha;"	 > <!--GREEK SMALL ALPHA-->
+<!ENTITY Amacr  SDATA "&Amacr;"  > <!--LATIN CAPITAL A WITH BAR-->
+<!ENTITY amacr  SDATA "&amacr;"  > <!--LATIN SMALL A WITH BAR-->
+<!ENTITY amp    SDATA "&amp;"    > <!--AMPERSAND-->
+<!ENTITY ape    SDATA "&ape;"    > <!--APPROXIMATE, EQUALS-->
+<!ENTITY Aring  SDATA "&Aring;"  > <!--LATIN CAPITAL LETTER A WITH RING-->
+<!ENTITY aring  SDATA "&aring;"  > <!--LATIN SMALL LETTER A WITH RING-->
+<!ENTITY Atilde SDATA "&Atilde;" > <!--LATIN CAPITAL LETTER A WITH TILDE-->
+<!ENTITY atilde SDATA "&atilde;" > <!--LATIN SMALL LETTER A WITH TILDE-->
+<!ENTITY Auml   SDATA "&Auml;"   > <!--LATIN CAPITAL LETTER A WITH DIAERESIS-->
+<!ENTITY auml   SDATA "&auml;"   > <!--LATIN SMALL LETTER A WITH DIAERESIS-->
+<!ENTITY beta   SDATA "&beta;"   > <!--GREEK SMALL BETA-->
+<!ENTITY block  SDATA "&block;"  > <!--block, filled-->
+<!ENTITY bull   SDATA "&bull;"   > <!--BULLET-->
+<!ENTITY Cacute SDATA "&Cacute;" > <!--LATIN CAPITAL LETTER C WITH ACUTE-->
+<!ENTITY cacute SDATA "&cacute;" > <!--LATIN SMALL LETTER C WITH ACUTE-->
+<!ENTITY cap    SDATA "&cap;"    > <!--Upper case C, tipped over forward, intersection-->
+<!ENTITY caret  SDATA "&caret;"  > <!--caret symbol, insertion mark-->
+<!ENTITY Ccedil SDATA "&Ccedil;" > <!--LATIN CAPITAL LETTER C WITH CEDILLA-->
+<!ENTITY ccedil SDATA "&ccedil;" > <!--LATIN SMALL LETTER C WITH CEDILLA-->
+<!ENTITY cents  SDATA "&cents;"  > <!--CENT SIGN-->
+<!ENTITY check  SDATA "&check;"  > <!--check mark-->
+<!ENTITY cir    SDATA "&cir;"    > <!--circle, open-->
+<!ENTITY cirf   SDATA "&cirf;"   > <!--circle, filled-->
+<!ENTITY clubs  SDATA "&clubs;" >  <!--clubs suit (solid)-->
+<!ENTITY cmacr  SDATA "&cmacr;"  > <!--small c, macron (bar above letter)-->
+<!ENTITY copy   SDATA "&copy;"   > <!--COPYRIGHT SIGN-->
+<!ENTITY dagger SDATA "&dagger;" > <!--DAGGER-->
+<!ENTITY darr   SDATA "&darr;"   > <!--down arrow-->
+<!ENTITY deg    SDATA "&deg;"    > <!--DEGREE SIGN--> 
+<!ENTITY Delta  SDATA "&Delta;"  > <!--GREEK CAPITAL DELTA-->
+<!ENTITY delta  SDATA "&delta;"  > <!--GREEK SMALL DELTA-->
+<!ENTITY diams  SDATA "&diams;"  > <!--diamond suit (solid)-->
+<!ENTITY divide SDATA "&divide;" > <!--DIVISION SIGN-->
+<!ENTITY Dmacr  SDATA "&Dmacr;"  > <!--LATIN CAPITAL D WITH BAR-->
+<!ENTITY dtrif  SDATA "&dtrif;"  > <!--down triangle, filled -->
+<!ENTITY dtris  SDATA "&dtris;"  > <!--down triangle, shaded or hatched-->
+<!ENTITY Eacute SDATA "&Eacute;" > <!--LATIN CAPITAL LETTER E WITH ACUTE-->
+<!ENTITY eacute SDATA "&eacute;" > <!--LATIN SMALL LETTER E WITH ACUTE-->
+<!ENTITY Eacuto SDATA "&Eacuto;" > <!--LATIN CAPITAL LETTER E WITH ACUTE AND OGONEK-->
+<!ENTITY eacuto SDATA "&eacuto;" > <!--LATIN SMALL LETTER E WITH ACUTE AND OGONEK-->
+<!ENTITY Ecaron SDATA "&Ecaron;" > <!--LATIN CAPITAL LETTER E WITH CARON-->
+<!ENTITY ecaron SDATA "&ecaron;" > <!--LATIN SMALL LETTER E WITH CARON-->
+<!ENTITY Ecirc  SDATA "&Ecirc;"  > <!--LATIN CAPITAL LETTER E WITH CIRCUMFLEX-->
+<!ENTITY ecirc  SDATA "&ecirc;"  > <!--LATIN SMALL LETTER E WITH CIRCUMFLEX-->
+<!ENTITY ee     SDATA "&ee;"     > <!--exponential base of the natural logarithm-->
+<!ENTITY Egrave SDATA "&Egrave;" > <!--LATIN CAPITAL LETTER E WITH GRAVE-->
+<!ENTITY egrave SDATA "&egrave;" > <!--LATIN SMALL LETTER E WITH GRAVE-->
+<!ENTITY Egravo SDATA "&Egravo;" > <!--LATIN CAPITAL LETTER E WITH GRAVE AND OGONEK-->
+<!ENTITY egravo SDATA "&egravo;" > <!--LATIN SMALL LETTER E WITH GRAVE AND OGONEK-->
+<!ENTITY Emacr  SDATA "&Emacr;"  > <!--capital e, macron -->
+<!ENTITY emacr  SDATA "&emacr;"  > <!--small e, macron -->
+<!ENTITY epsiv  SDATA "&epsiv;"  > <!--varepsilon (variation on epsilon: more script-like)-->
+<!ENTITY equiv	SDATA "&equiv;"	 > <!--triple bar-->
+<!ENTITY erever SDATA "&erever;" > <!--Latin small letter e reversed--> 
+<!ENTITY esh    SDATA "&esh;"    > <!--Latin small s; integral operator-->
+<!ENTITY eta    SDATA "&eta;"    > <!--GREEK SMALL LETTER ETA-->
+<!ENTITY Eth    SDATA "&Eth;"    > <!--LATIN CAPITAL LETTER ETH-->
+<!ENTITY eth    SDATA "&eth;"    > <!--LATIN SMALL LETTER ETH-->
+<!ENTITY eturn  SDATA "&eturn;"  > <!--Latin small letter e turned, like schwa--> 
+<!ENTITY Euml   SDATA "&Euml;"   > <!--LATIN CAPITAL LETTER E WITH DIAERESIS-->
+<!ENTITY euml   SDATA "&euml;"   > <!--LATIN SMALL LETTER E WITH DIAERESIS-->
+<!ENTITY euro   SDATA "&euro;"   > <!--Euro currency symbol-->
+<!ENTITY female SDATA "&female;" > <!--circle with a crossed line underneath-->
+<!ENTITY fnof   SDATA "&fnof;"   > <!--FUNCTION OF italic small f-->
+<!ENTITY forall SDATA "&forall;" > <!--FOR ALL (upside down capital A)-->
+<!ENTITY gamma  SDATA "&gamma;"  > <!--small gamma, Greek-->
+<!ENTITY Gback  SDATA "&Gback;"  > <!--back g in Nisga'a language; upper case g with underline-->
+<!ENTITY gback  SDATA "&gback;"  > <!--back g in Nisga'a language; lower case g with underline-->
+<!ENTITY Gcaron SDATA "&Gcaron;" > <!--LATIN CAPITAL LETTER G WITH CARON-->
+<!ENTITY gcaron SDATA "&gcaron;" > <!--LATIN SMALL LETTER g WITH CARON-->
+<!ENTITY ge     SDATA "&ge;"     > <!--GREATER-THAN-OR-EQUAL-->
+<!ENTITY Glotta SDATA "&Glotta;" > <!--CAPITAL LETTER GLOTTAL STOP--> 
+<!ENTITY glotta SDATA "&glotta;" > <!--SMALL LETTER GLOTTAL STOP--> 
+<!ENTITY gt     SDATA "&gt;"     > <!--GREATER-THAN-->
+<!ENTITY hellip SDATA "&hellip;" > <!--HORIZONTAL ELLIPSIS-->
+<!ENTITY heart  SDATA "&heart;"  > <!--HEART SUIT SYMBOL-->
+<!ENTITY Iacute SDATA "&Iacute;" > <!--LATIN CAPITAL LETTER I WITH ACUTE-->
+<!ENTITY iacute SDATA "&iacute;" > <!--LATIN SMALL LETTER I WITH ACUTE-->
+<!ENTITY Iacuto SDATA "&Iacuto;" > <!--LATIN CAPITAL LETTER I WITH ACUTE AND OGONEK-->
+<!ENTITY iacuto SDATA "&iacuto;" > <!--LATIN SMALL LETTER I WITH ACUTE AND OGONEK-->
+<!ENTITY ibreve SDATA "&ibreve;" > <!--LATIN SMALL LETTER I WITH BREVE-->
+<!ENTITY Icirc  SDATA "&Icirc;"  > <!--LATIN CAPITAL LETTER I WITH CIRCUMFLEX-->
+<!ENTITY icirc  SDATA "&icirc;"  > <!--LATIN SMALL LETTER I WITH CIRCUMFLEX-->
+<!ENTITY Igrave SDATA "&Igrave;" > <!--LATIN CAPITAL LETTER I WITH GRAVE-->
+<!ENTITY igrave SDATA "&igrave;" > <!--LATIN SMALL LETTER I WITH GRAVE-->
+<!ENTITY imacr  SDATA "&imacr;"  > <!--small i, macron -->
+<!ENTITY Iogon  SDATA "&Iogon;"  > <!--LATIN CAPITAL LETTER I WITH OGONEK-->
+<!ENTITY iogon  SDATA "&iogon;"  > <!--LATIN SMALL LETTER I WITH OGONEK-->
+<!ENTITY iquest SDATA "&iquest;" > <!--inverted question mark-->
+<!ENTITY Itilde SDATA "&Itilde;" > <!--LATIN CAPITAL LETTER I WITH TILDE-->
+<!ENTITY itilde SDATA "&itilde;" > <!--LATIN SMALL LETTER I WITH TILDE-->
+<!ENTITY Iuml   SDATA "&Iuml;"   > <!--LATIN CAPITAL LETTER I WITH DIAERESIS-->
+<!ENTITY iuml   SDATA "&iuml;"   > <!--LATIN SMALL LETTER I WITH DIAERESIS-->
+<!ENTITY Kacute SDATA "&Kacute;" > <!--LATIN CAPITAL K WITH ACUTE-->
+<!ENTITY kacute SDATA "&kacute;" > <!--LATIN SMALL K WITH ACUTE-->
+<!ENTITY Kback  SDATA "&Kback;"  > <!--back k in Nisga'a language; upper case k with underline-->
+<!ENTITY kback  SDATA "&kback;"  > <!--back k in Nisga'a language; lower case k with underline-->
+<!ENTITY Lambda SDATA "&Lambda;" > <!--GREEK CAPITAL LETTER LAMBDA-->
+<!ENTITY lambda SDATA "&lambda;" > <!--GREEK SMALL LETTER LAMBDA-->
+<!ENTITY laquo  SDATA "&laquo;"  > <!--LEFT ANGLE QUOTATION MARK-->
+<!ENTITY larr	SDATA "&larr;"   > <!--LEFTWARD AROW-->
+<!ENTITY Lcedil SDATA "&Lcedil;" > <!--LATIN CAPITAL LETTER L WITH CEDILLA-->
+<!ENTITY lcedil SDATA "&lcedil;" > <!--LATIN SMALL LETTER L WITH CEDILLA-->
+<!ENTITY ldquo  SDATA "&ldquo;"  > <!--LEFT DOUBLE QUOTATION MARK-->
+<!ENTITY le     SDATA "&le;"     > <!--LESS THAN OR EQUAL-->
+<!ENTITY lsqb   SDATA "&lsqb;"   > <!--LEFT SQUARE BRACKET-->
+<!ENTITY lsquo  SDATA "&lsquo;"  > <!--LEFT SINGLE QUOTATION MARK-->
+<!ENTITY Lstrok SDATA "&Lstrok;" > <!--CAPITAL L, STROKE-->
+<!ENTITY lstrok SDATA "&lstrok;" > <!--SMALL L, STROKE-->
+<!ENTITY lt  	SDATA "&lt;"	 > <!--less than-->
+<!ENTITY male   SDATA "&male;"   > <!--circle with a crossed line top sideways-->
+<!ENTITY mdash  SDATA "&mdash;"  > <!--EM DASH-->
+<!ENTITY mspace SDATA "&mspace;" > <!--EMSPACE used in page.xom-->
+<!ENTITY mu     SDATA "&mu;"     > <!--GREEK SMALL LETTER MU-->
+<!ENTITY nbsp   SDATA "&nbsp;"   > <!--NO-BREAK SPACE-->
+<!ENTITY ncedil SDATA "&ncedil;" > <!--LATIN SMALL LETTER N WITH CEDILLA-->
+<!ENTITY ndash  SDATA "&ndash;"  > <!--EN DASH-->
+<!ENTITY ne     SDATA "&ne;"     > <!--not equal to sign-->
+<!ENTITY Nmacr  SDATA "&Nmacr;"  > <!--LATIN CAPITAL N WITH BAR-->
+<!ENTITY nmacr  SDATA "&nmacr;"  > <!--LATIN SMALL N WITH BAR-->
+<!ENTITY ntilde SDATA "&ntilde;" > <!--LATIN SMALL LETTER N WITH TILDE-->
+<!ENTITY Ntilde SDATA "&Ntilde;" > <!--LATIN CAPITAL LETTER N WITH TILDE-->
+<!ENTITY nu     SDATA "&nu;"     > <!--GREEK SMALL LETTER NU--> 
+<!ENTITY Oacute SDATA "&Oacute;" > <!--LATIN CAPITAL LETTER O WITH ACUTE-->
+<!ENTITY oacute SDATA "&oacute;" > <!--LATIN SMALL LETTER O WITH ACUTE-->
+<!ENTITY Oacuto SDATA "&Oacuto;" > <!--LATIN CAPITAL LETTER O WITH ACUTE AND OGONEK-->
+<!ENTITY oacuto SDATA "&oacuto;" > <!--LATIN SMALL LETTER O WITH ACUTE AND OGONEK-->
+<!ENTITY obreve SDATA "&obreve;" > <!--LATIN SMALL LETTER O WITH BREVE-->
+<!ENTITY Ocirc  SDATA "&Ocirc;"  > <!--LATIN CAPITAL LETTER O WITH CIRCUMFLEX-->
+<!ENTITY ocirc  SDATA "&ocirc;"  > <!--LATIN SMALL LETTER O WITH CIRCUMFLEX-->
+<!ENTITY odblac SDATA "&odblac;" > <!--latin small letter o with double acute-->
+<!ENTITY Odblac SDATA "&Odblac;" > <!--latin capital letter O with double acute-->
+<!ENTITY oelig  SDATA "&oelig;"  > <!--LATIN OE DIPTHONG (LIGATURE)-->
+<!ENTITY OElig  SDATA "&OElig;"  > <!--LATIN CAPITAL LETTER OE DIPTHONG (LIGATURE)-->
+<!ENTITY ograve SDATA "&ograve;" > <!--LATIN SMALL LETTER O WITH GRAVE-->
+<!ENTITY Ograve SDATA "&Ograve;" > <!--LATIN CAPITAL LETTER O WITH GRAVE-->
+<!ENTITY Ogravo SDATA "&Ogravo;" > <!--LATIN CAPITAL LETTER O WITH GRAVE AND OGONEK-->
+<!ENTITY ogravo SDATA "&ogravo;" > <!--LATIN SMALL LETTER O WITH GRAVE AND OGONEK-->
+<!ENTITY oinfin SDATA "&oinfin;" > <!--infinity symbol in circle-->
+<!ENTITY omacr  SDATA "&omacr;"  > <!--SMALL O WITH MACRON-->
+<!ENTITY Omega  SDATA "&Omega;"  > <!--GREEK CAPITAL LETTER OMEGA-->
+<!ENTITY omega  SDATA "&omega;"  > <!--GREEK SMALL LETTER OMEGA-->
+<!ENTITY Oogon  SDATA "&Oogon;"  > <!--LATIN CAPITAL LETTER O WITH OGONEK-->
+<!ENTITY oogon  SDATA "&oogon;"  > <!--LATIN SMALL LETTER O WITH OGONEK-->
+<!ENTITY oplus  SDATA "&oplus;"  > <!--PLUS SIGN IN CIRCLE-->
+<!ENTITY ordm   SDATA "&ordm;"   > <!--MASCULINE ORDINAL INDICATOR-->
+<!ENTITY oslash SDATA "&oslash;" > <!--LATIN SMALL LETTER O WITH SLASH-->
+<!ENTITY Oslash SDATA "&Oslash;" > <!--LATIN CAPITAL LETTER O WITH SLASH-->
+<!ENTITY Otilde SDATA "&Otilde;" > <!--LATIN CAPITAL LETTER O WITH TILDE-->
+<!ENTITY otilde SDATA "&otilde;" > <!--LATIN SMALL LETTER O WITH TILDE-->
+<!ENTITY Ouml   SDATA "&Ouml;"   > <!--LATIN CAPITAL LETTER O WITH DIAERESIS-->
+<!ENTITY ouml   SDATA "&ouml;"   > <!--LATIN SMALL LETTER O WITH DIAERESIS-->
+<!ENTITY para   SDATA "&para;"   > <!--PILCROW SIGN-->
+<!ENTITY part   SDATA "&part;"   > <!--PARTIAL DIFFERENTIAL-->
+<!ENTITY Phi    SDATA "&Phi;"    > <!--GREEK CAPITAL LETTER PHI-->
+<!ENTITY pi     SDATA "&pi;"     > <!--GREEK SMALL LETTER PI-->
+<!ENTITY plusmn SDATA "&plusmn;" > <!--PLUS-OR-MINUS SIGN-->
+<!ENTITY Pmacr  SDATA "&Pmacr;"  > <!--capital P, macron-->
+<!ENTITY Ppeso  SDATA "&Ppeso;"  > <!--Philippine peso-->
+<!ENTITY pound	SDATA "&pound;"  > <!--POUND SIGN-->
+<!ENTITY prime  SDATA "&prime;"  > <!--FOOT/MINUTE SIGN-->
+<!ENTITY Prime  SDATA "&Prime;"  > <!--INCHES SIGN-->
+<!ENTITY Psi    SDATA "&Psi;"    > <!--GREEK CAPITAL LETTER PSI-->
+<!ENTITY psi    SDATA "&psi;"    > <!--GREEK SMALL LETTER PSI-->
+<!ENTITY radic	SDATA "&radic;"  > <!--RADICAL (square root symbol)-->
+<!ENTITY rarr	SDATA "&rarr;"   > <!--RIGHTWARD ARROW-->
+<!ENTITY raquo  SDATA "&raquo;"  > <!--RIGHT-POINTING DOUBLE ANGLE QUOTATION MARK-->
+<!ENTITY Rcaron SDATA "&Rcaron;" > <!--LATIN CAPITAL LETTER R WITH CARON-->
+<!ENTITY rcaron SDATA "&rcaron;" > <!--LATIN SMALL LETTER R WITH CARON-->
+<!ENTITY rdquo  SDATA "&rdquo;"  > <!--RIGHT DOUBLE QUOTATION MARK-->
+<!ENTITY reg	SDATA "&reg;"    > <!--CIRCLEDR =REGISTERED SIGN-->
+<!ENTITY rsqb   SDATA "&rsqb;"   > <!--RIGHT SQUARE BRACKET-->
+<!ENTITY rsquo  SDATA "&rsquo;"  > <!--RIGHT SINGLE QUOTATION MARK-->
+<!ENTITY rx     SDATA "&rx;"     > <!--pharmaceutical prescription (Rx)-->
+<!ENTITY scaron SDATA "&scaron;" > <!--lower case s with caron-->
+<!ENTITY Scaron SDATA "&Scaron;" > <!--upper case s with caron-->
+<!ENTITY Scedil SDATA "&Scedil;" > <!--LATIN CAPITAL LETTER S WITH CEDILLA-->
+<!ENTITY scedil SDATA "&scedil;" > <!--LATIN SMALL LETTER s WITH CEDILLA-->
+<!ENTITY schwa  SDATA "&schwa;"  > <!--UPSIDE DOWN SMALL E-->
+<!ENTITY scirc  SDATA "&scirc;"  > <!--lower case s with circumflex-->
+<!ENTITY Scirc  SDATA "&Scirc;"  > <!--upper case S with circumflex-->
+<!ENTITY sect   SDATA "&sect;"   > <!--SECTION SIGN-->
+<!ENTITY Sigma  SDATA "&Sigma;"  > <!--GREEK CAPITAL LETTER SIGMA-->
+<!ENTITY sigma  SDATA "&sigma;"  > <!--GREEK SMALL LETTER SIGMA-->
+<!ENTITY smile  SDATA "&smile;"  > <!--UP CURVE-->
+<!ENTITY spades SDATA "&spades;" > <!--spade suit (solid)-->
+<!ENTITY square SDATA "&square;" > <!--WHITE SQUARE FOR CHECKBOX-->
+<!ENTITY sum	SDATA "&sum;"    > <!--summation operator-->
+<!ENTITY sup-e   SDATA "&sup-e;"   > <!--superscript e-->
+<!ENTITY sup-egre SDATA "&sup-egre;" > <!--superscript egre-->
+<!ENTITY sup-er  SDATA "&sup-er;"  > <!--superscript er-->
+<!ENTITY sup-ere SDATA "&sup-ere;" > <!--superscript ere-->
+<!ENTITY sup-ers SDATA "&sup-ers;" > <!--superscript ers-->
+<!ENTITY sup-r   SDATA "&sup-r;"   > <!--superscript r-->
+<!ENTITY sup-rs  SDATA "&sup-rs;"  > <!--superscript rs-->
+<!ENTITY sup-re  SDATA "&sup-re;"  > <!--superscript re-->
+<!ENTITY sup-res SDATA "&sup-res;" > <!--superscript res-->
+<!ENTITY sup-lle SDATA "&sup-lle;" > <!--superscript lle-->
+<!ENTITY sup-me  SDATA "&sup-me;"  > <!--superscript me-->
+<!ENTITY sup-os  SDATA "&sup-os;"  > <!--superscript os-->
+<!ENTITY Tacute  SDATA "&Tacute;">   <!--LATIN CAPITAL T WITH ACUTE-->
+<!ENTITY tacute  SDATA "&tacute;">   <!--LATIN SMALL t WITH ACUTE-->
+<!ENTITY tau     SDATA "&tau;">      <!--GREEK SMALL LETTER TAU-->
+<!ENTITY Theta   SDATA "&Theta;"> <!--CAPITAL THETA, GREEK-->
+<!ENTITY there4  SDATA "&there4;" > <!--therefore symbol-->
+<!ENTITY thetas  SDATA "&thetas;" > <!--STRAIGHT THETA, GREEK-->
+<!ENTITY Thorn   SDATA "&Thorn;"  > <!--upper case Icelandic Thorn-->
+<!ENTITY thorn   SDATA "&thorn;"  > <!--lower case Icelandic thorn-->
+<!ENTITY tilde   SDATA "&tilde;"  > <!--TILDE-->
+<!ENTITY times   SDATA "&times;"  > <!--MULTIPLICATION SIGN-->
+<!ENTITY timesb  SDATA "&timesb;" > <!--MULTIPLICATION SIGN IN BOX-->
+<!ENTITY trade   SDATA "&trade;"  > <!--TRADE MARK SIGN-->
+<!ENTITY Uacute  SDATA "&Uacute;" > <!--LATIN CAPITAL LETTER U WITH ACUTE-->
+<!ENTITY uacute  SDATA "&uacute;" > <!--LATIN SMALL LETTER U WITH ACUTE-->
+<!ENTITY Uacuto  SDATA "&Uacuto;" > <!--LATIN CAPITAL LETTER U WITH ACUTE AND OGONEK-->
+<!ENTITY uacuto  SDATA "&uacuto;" > <!--LATIN SMALL LETTER U WITH ACUTE AND OGONEK-->
+<!ENTITY uarr    SDATA "&uarr;"   > <!--UPWARD ARROW-->
+<!ENTITY Ucirc   SDATA "&Ucirc;"  > <!--LATIN CAPITAL LETTER U WITH CIRCUMFLEX-->
+<!ENTITY ucirc   SDATA "&ucirc;"  > <!--LATIN SMALL LETTER U WITH CIRCUMFLEX-->
+<!ENTITY Ugrave  SDATA "&Ugrave;" > <!--LATIN CAPITAL LETTER U WITH GRAVE-->
+<!ENTITY ugrave  SDATA "&ugrave;" > <!--LATIN SMALL LETTER U WITH GRAVE-->
+<!ENTITY utri    SDATA "&utri;"   > <!--upward triangle, open-->
+<!ENTITY utrif   SDATA "&utrif;"  > <!--upward triangle, filled-->
+<!ENTITY Uuml    SDATA "&Uuml;"   > <!--LATIN CAPITAL LETTER U WITH DIAERESIS-->
+<!ENTITY uuml    SDATA "&uuml;"   > <!--LATIN SMALL LETTER U WITH DIAERESIS-->
+<!ENTITY verbar  SDATA "&verbar;" > <!--VERTICAL BAR-->
+<!ENTITY Vmacr   SDATA "&Vmacr;"  > <!--LATIN CAPITAL V WITH BAR-->
+<!ENTITY vmacr   SDATA "&vmacr;"  > <!--LATIN SMALL V WITH BAR-->
+<!ENTITY wdash   SDATA "&wdash;"  > <!--double-u dash used by insert.xom-->
+<!ENTITY Xback   SDATA "&Xback;"  > <!--back x in Gitxsan language; upper case x with underline-->
+<!ENTITY xback   SDATA "&xback;"  > <!--back x in Gitxsan language; lower case x with underline-->
+<!ENTITY Xmacr   SDATA "&Xmacr;"  > <!--LATIN CAPITAL X WITH BAR-->
+<!ENTITY xmacr   SDATA "&xmacr;"  > <!--LATIN SMALL x WITH BAR-->
+<!ENTITY Yacute  SDATA "&Yacute;" > <!--LATIN CAPITAL LETTER Y WITH ACUTE-->
+<!ENTITY yacute  SDATA "&yacute;" > <!--LATIN SMALL LETTER Y WITH ACUTE-->
+<!ENTITY yen	 SDATA "&yen;"	 > <!--YEN CHARACTER-->
+<!ENTITY yuml    SDATA "&yuml;"   > <!--LATIN SMALL LETTER Y WITH DIAERESIS-->
+<!ENTITY Zcaron  SDATA "&Zcaron;" > <!--upper case Z with caron-->
+<!ENTITY zcaron  SDATA "&zcaron;" > <!--lower case z with caron-->

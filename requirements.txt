@@ -1,0 +1,25 @@
+# TR SGML Validator — Python dependencies
+# Install with: pip install -r requirements.txt
+#
+# Minimum Python version: 3.10+
+# Recommended:            3.12
+
+# ── UI ────────────────────────────────────────────────────────────────────────
+streamlit>=1.35.0
+
+# ── PDF extraction ────────────────────────────────────────────────────────────
+pymupdf>=1.24.0          # fitz — primary PDF text + layout extraction
+pdfplumber>=0.11.0       # fallback PDF extraction (tables, scanned)
+
+# ── DOCX parsing (optional, used by D2/D3 when ABBYY DOCX is provided) ───────
+python-docx>=1.1.0
+
+# ── XML / HTML ────────────────────────────────────────────────────────────────
+lxml>=5.2.0
+
+# ── Data / utilities ─────────────────────────────────────────────────────────
+pandas>=2.2.0
+openpyxl>=3.1.0          # Excel reading (for Excel HITL review mode)
+
+# ── Standard-library only (no extra install needed) ──────────────────────────
+# re, difflib, pathlib, dataclasses, json, html, unicodedata — all built-in

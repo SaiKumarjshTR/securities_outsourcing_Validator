@@ -2179,6 +2179,163 @@ def check_word_gaps(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
         )
         gaps.append({'missing': lead_norm, 'line': lead_line, 'type': 'head_deletion'})
 
+    # ── D8-e: Paragraph-local contextual gap detection ────────────────────────
+    # D8 global diff misses deletions when the removed text appears elsewhere in
+    # the SGML document (the sgml_blob_norm skip fires). D8-e works paragraph-
+    # by-paragraph: it locates each PDF paragraph in SGML via a body anchor,
+    # extracts a tight local window, and runs SequenceMatcher in that context.
+    # This catches leading / middle / trailing deletions that D8 misses.
+    # Threshold: 3 words (vs D8's 4) — safe because comparison is contextual.
+    _STOP_WORDS_E = frozenset({
+        'the', 'a', 'an', 'of', 'in', 'to', 'and', 'or', 'is', 'are',
+        'was', 'be', 'that', 'this', 'it', 'as', 'at', 'by', 'for',
+        'on', 'with', 'not', 'from', 'its', 'into', 'we', 'our',
+    })
+    # Seed dedup with gaps already reported by D8/D8-b/D8-c/D8-d
+    seen_d8e: set[str] = {g['missing'][:50] for g in gaps}
+
+    for para in pdf.paragraphs:
+        para_words = _norm(para).split()
+        if len(para_words) < 8:
+            continue
+
+        # Try 5-gram anchors from pdf position 2 onwards — starting at 2 lets
+        # us detect leading deletions where the first 1-4 words are gone
+        anchor_pos_e: int | None = None
+        anchor_off_e: int | None = None
+        for pdf_start in range(2, min(len(para_words) - 5, 20)):
+            candidate = tuple(para_words[pdf_start:pdf_start + 5])
+            if candidate in sgml_ngrams_set:
+                for si in range(len(sgml_words_only) - 5):
+                    if tuple(sgml_words_only[si:si + 5]) == candidate:
+                        anchor_pos_e = si
+                        anchor_off_e = pdf_start
+                        break
+                if anchor_pos_e is not None:
+                    break
+
+        if anchor_pos_e is None:
+            continue  # whole paragraph absent — D8/D8-b cover this
+
+        # Tight local SGML window around the anchor
+        win_start = max(0, anchor_pos_e - anchor_off_e - 2)
+        win_end   = min(len(sgml_words_only), anchor_pos_e + len(para_words) + 10)
+        sgml_window = sgml_words_only[win_start:win_end]
+        sgml_win_text = ' '.join(sgml_window)
+
+        # Local diff: PDF paragraph words vs SGML window words
+        sm_e = SequenceMatcher(None, para_words, sgml_window, autojunk=False)
+        for tag, i1, i2, _j1, _j2 in sm_e.get_opcodes():
+            if tag not in ('delete', 'replace'):
+                continue
+            missing_w = para_words[i1:i2]
+            if len(missing_w) < 3:
+                continue
+            missing_txt = ' '.join(missing_w)
+            missing_nrm = _norm(missing_txt)
+            # Must contain at least one content word (not all stopwords)
+            if all(w in _STOP_WORDS_E for w in missing_w):
+                continue
+            if _is_omittable(missing_txt):
+                continue
+            # Contextual guard: not present in the local SGML window
+            if missing_nrm in sgml_win_text:
+                continue
+            sig = missing_nrm[:50]
+            if sig in seen_d8e:
+                continue
+            seen_d8e.add(sig)
+
+            # Locate line via anchor word
+            e_line = 0
+            anchor_word = para_words[anchor_off_e] if anchor_off_e < len(para_words) else ''
+            for ln_idx, ln in enumerate(sgml_lines):
+                ln_nrm = _norm(re.sub(r'<[^>]+>', ' ', ln))
+                if anchor_word and anchor_word in ln_nrm:
+                    e_line = ln_idx + 1
+                    break
+
+            _add_issue(
+                result, "word_gap", "major",
+                f"D8-e — Text gap within paragraph: \"{missing_txt[:120]}\"",
+                location=str(e_line) if e_line else '',
+                impact="HITL: paragraph interior/leading gap",
+            )
+            gaps.append({'missing': missing_nrm, 'line': e_line, 'type': 'interior'})
+
+    # ── D8-f: Dollar amount / percentage mismatch ────────────────────────────
+    # Catches cases where a number was changed (e.g. "$300" → "$250") rather
+    # than deleted. For each PDF paragraph matched in SGML, extracts dollar
+    # amounts and percentages from both and flags any value present in the PDF
+    # paragraph that is absent from the corresponding SGML window.
+    _AMOUNT_RE = re.compile(
+        r'\$[\d,]+(?:\.\d+)?'       # $300, $1,234.56
+        r'|\b\d+(?:\.\d+)?\s*%'     # 15%, 0.5 %
+        r'|\b(?:19|20)\d{2}\b'       # years 1900-2099
+    )
+
+    def _norm_amount(s: str) -> str:
+        return re.sub(r'[\s,]', '', s).lower()
+
+    seen_d8f: set[str] = set()
+
+    for para in pdf.paragraphs:
+        para_words = _norm(para).split()
+        if len(para_words) < 6:
+            continue
+        pdf_amounts = _AMOUNT_RE.findall(para)
+        if not pdf_amounts:
+            continue
+
+        # Locate paragraph in SGML (same anchor strategy as D8-e)
+        anchor_pos_f: int | None = None
+        anchor_off_f: int | None = None
+        for pdf_start in range(0, min(len(para_words) - 5, 20)):
+            candidate = tuple(para_words[pdf_start:pdf_start + 5])
+            if candidate in sgml_ngrams_set:
+                for si in range(len(sgml_words_only) - 5):
+                    if tuple(sgml_words_only[si:si + 5]) == candidate:
+                        anchor_pos_f = si
+                        anchor_off_f = pdf_start
+                        break
+                if anchor_pos_f is not None:
+                    break
+
+        if anchor_pos_f is None:
+            continue
+
+        win_start = max(0, anchor_pos_f - anchor_off_f - 2)
+        win_end   = min(len(sgml_words_only), anchor_pos_f + len(para_words) + 10)
+        sgml_win_f = ' '.join(sgml_words_only[win_start:win_end])
+        # Also check raw SGML text around the anchor (preserves $ signs stripped by _norm)
+        approx_line = 0
+        for ln_idx, ln in enumerate(sgml_lines):
+            if anchor_off_f < len(para_words) and para_words[anchor_off_f] in _norm(re.sub(r'<[^>]+>', ' ', ln)):
+                approx_line = ln_idx + 1
+                break
+        # Reconstruct raw SGML window ±30 lines for amount comparison
+        raw_win_lines = sgml_lines[max(0, approx_line - 5): min(len(sgml_lines), approx_line + 15)]
+        raw_win = re.sub(r'<[^>]+>', ' ', ' '.join(raw_win_lines))
+        sgml_amounts = set(_norm_amount(a) for a in _AMOUNT_RE.findall(raw_win))
+
+        for amt in pdf_amounts:
+            amt_n = _norm_amount(amt)
+            if amt_n in seen_d8f:
+                continue
+            if amt_n not in sgml_amounts:
+                # Cross-check against full SGML (in case the amount is present but distant)
+                full_sgml_raw = re.sub(r'<[^>]+>', ' ', raw_sgml)
+                if amt_n in (_norm_amount(a) for a in _AMOUNT_RE.findall(full_sgml_raw)):
+                    continue  # present elsewhere — skip
+                seen_d8f.add(amt_n)
+                _add_issue(
+                    result, "word_gap", "major",
+                    f"D8-f — Amount/date in PDF not found in SGML: \"{amt}\"",
+                    location=str(approx_line) if approx_line else '',
+                    impact="HITL: possible number substitution",
+                )
+                gaps.append({'missing': amt_n, 'line': approx_line, 'type': 'amount'})
+
     result.word_gaps = gaps
 
 

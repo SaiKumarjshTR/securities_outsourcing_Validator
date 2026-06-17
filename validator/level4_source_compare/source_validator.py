@@ -2109,6 +2109,76 @@ def check_word_gaps(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
         )
         gaps.append({'missing': norm_b, 'line': 0, 'type': 'bold_short'})
 
+    # ── D8-d: Leading text deletion check ────────────────────────────────────
+    # Mirror of D8-b (tail truncation). D8-b anchors on the FIRST 6 words of
+    # a PDF paragraph — so when those words themselves are deleted (e.g.
+    # "As of April 1, 2026" removed from the start of a paragraph), D8-b
+    # silently skips the paragraph and D8 global diff misses it because the
+    # remaining words are present.
+    #
+    # Strategy: for each PDF paragraph, use words 4-8 as a "body anchor" (skip
+    # the lead). If the body anchor IS in SGML, the paragraph body is there.
+    # Then check whether the lead words (first 4) are present in SGML immediately
+    # before the body anchor position. If they are NOT → leading text was deleted.
+    # ─────────────────────────────────────────────────────────────────────────
+    for para in pdf.paragraphs:
+        para_words = _norm(para).split()
+        if len(para_words) < 10:
+            continue  # too short to have meaningful leading deletion
+
+        lead_words  = para_words[:5]       # words 0-4 (the potentially deleted lead)
+        body_anchor = tuple(para_words[5:10])  # words 5-9 — entirely past the lead, in paragraph body
+
+        # Body must be in SGML — otherwise D8/D8-b handle it
+        if body_anchor not in sgml_ngrams_set:
+            continue
+
+        # Lead must be genuinely absent from SGML (not just misaligned)
+        lead_norm = ' '.join(lead_words)
+        if len(lead_words) < 4:
+            continue
+        if _is_omittable(lead_norm):
+            continue
+        if lead_norm in sgml_blob_norm:
+            continue  # lead present somewhere in SGML — not a deletion
+
+        # Locate body anchor in SGML word list
+        body_pos = None
+        for si in range(len(sgml_words_only) - 5):
+            if tuple(sgml_words_only[si:si + 5]) == body_anchor:
+                body_pos = si
+                break
+        if body_pos is None:
+            continue
+
+        # Confirm: SGML words immediately before body_pos don't match the lead
+        sgml_before = sgml_words_only[max(0, body_pos - 5): body_pos]
+        lead_present_before = any(lead_words[i] == sgml_before[j]
+                                  for i in range(len(lead_words))
+                                  for j in range(len(sgml_before))
+                                  if abs(i - j) <= 1)
+        if lead_present_before:
+            continue  # lead is actually adjacent — not deleted
+
+        # Find SGML line number from body anchor
+        lead_line = 0
+        for ln_idx, ln in enumerate(sgml_lines):
+            ln_norm = _norm(re.sub(r'<[^>]+>', ' ', ln))
+            if any(w in ln_norm for w in body_anchor[:2]):
+                lead_line = ln_idx + 1
+                break
+
+        display = lead_norm[:120]
+        _add_issue(
+            result,
+            "word_gap",
+            "major",
+            f"D8-d — Leading text deleted from paragraph: \"{display}\"",
+            location=str(lead_line) if lead_line else '',
+            impact="HITL: paragraph head deletion",
+        )
+        gaps.append({'missing': lead_norm, 'line': lead_line, 'type': 'head_deletion'})
+
     result.word_gaps = gaps
 
 

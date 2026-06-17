@@ -261,6 +261,22 @@ class L4Result:
     # D8: Word-level gaps — list of {missing: str, line: int}
     word_gaps: list[dict] = field(default_factory=list)
 
+    # diff_generator compatibility fields — populated by check_text_accuracy()
+    # when a DOCX is available; empty-list defaults ensure no AttributeError
+    # if they are not set (e.g. PDF-only validation path).
+    truncated_paragraphs: list[str] = field(default_factory=list)
+    inline_changed_paragraphs: list[dict] = field(default_factory=list)
+    missing_short_lines: list[str] = field(default_factory=list)
+
+    # diff_generator contact-detail fields (D4-g/h)
+    missing_emails: list[str] = field(default_factory=list)
+    extra_emails: list[str] = field(default_factory=list)
+    missing_phones: list[str] = field(default_factory=list)
+    extra_phones: list[str] = field(default_factory=list)
+    missing_urls: list[str] = field(default_factory=list)
+    extra_urls: list[str] = field(default_factory=list)
+    missing_postal_codes: list[str] = field(default_factory=list)
+
 
 def _add_issue(result: L4Result, dimension: str, severity: str, description: str,
                location: str = "", impact: str = "") -> None:

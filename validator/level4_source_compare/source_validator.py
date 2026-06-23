@@ -345,6 +345,13 @@ def _norm(text: str) -> str:
     text = text.replace("\u2212", "-")                          # minus sign → -
     text = text.replace("\u00a0", " ")                          # nbsp → space
     text = text.lower()
+    # Fix inline-tag split artifacts produced when SGML tags like <EM> or <BOLD>
+    # sit inside a hyphenated token or immediately before punctuation:
+    #   "21-<EM>101"  →  strip tag  →  "21- 101"  →  fix  →  "21-101"
+    #   "funds</EM>;" →  strip tag  →  "funds ;"   →  fix  →  "funds;"
+    # Without this, compound numbers (NI 21-101, 33-109, etc.) fail D3 matching.
+    text = re.sub(r'(\w-)\s+(\w)', r'\1\2', text)    # join split hyphenated tokens
+    text = re.sub(r'(\w)\s+([;:,.])', r'\1\2', text)  # rejoin split punctuation
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -719,6 +726,10 @@ def _extract_sgml_text(sgml: str) -> dict:
     text_only = text_only.replace("\u2013", "-").replace("\u2014", "-")
     text_only = text_only.replace("\u2212", "-")
     text_only = text_only.replace("\u00a0", " ")
+    # Fix inline-tag split artifacts (same logic as _norm — keep in sync):
+    # "21-<EM>101" → strip tag → "21- 101" → fix → "21-101"
+    text_only = re.sub(r'(\w-)\s+(\w)', r'\1\2', text_only)
+    text_only = re.sub(r'(\w)\s+([;:,.])', r'\1\2', text_only)
     text_only = re.sub(r"\s+", " ", text_only).strip()
 
     # Extract paragraphs (content inside P tags)
@@ -754,6 +765,12 @@ def _extract_sgml_text(sgml: str) -> dict:
         if _ct and len(_ct.split()) >= 2:
             sgml_table_cells.append(_ct)
 
+    # D4-e fix: store whether the raw SGML contains an <APPENDIX> or <SCHEDDOC>
+    # opening tag. The "text" field has tags stripped so searching it for
+    # "<APPENDIX" would always return False — a direct cause of D4-e false
+    # positives on documents that use <APPENDIX> labels (e.g. CSA Staff Notices).
+    has_appendix_tag = bool(re.search(r"<APPENDIX[\s>]|<SCHEDDOC[\s>]", sgml))
+
     return {
         "text": text_only,
         "paragraphs": paragraphs,
@@ -764,6 +781,7 @@ def _extract_sgml_text(sgml: str) -> dict:
         "graphic_count": graphic_count,
         "attrs": attrs,
         "table_cells": sgml_table_cells,   # GAP 5: TBLCELL text
+        "has_appendix_tag": has_appendix_tag,  # D4-e: raw-SGML tag presence
     }
 
 
@@ -1506,7 +1524,13 @@ def check_completeness(pdf: _PDFData, sgml_data: dict, result: L4Result,
     appendix_in_pdf = bool(re.search(
         r"\b(Schedule|Appendix|Annex|Exhibit)\s+[A-Z\d]", pdf.first_page_text, re.IGNORECASE
     ))
-    appendix_in_sgml = bool(re.search(r"<APPENDIX|<SCHEDDOC|Schedule\s+[A-Z\d]", sgml_data["text"]))
+    # Use the pre-computed boolean from raw SGML (sgml_data["text"] has tags
+    # stripped, so searching it for "<APPENDIX" always returns False — a bug
+    # that caused false positives on every CSA Staff Notice with <APPENDIX>).
+    appendix_in_sgml = (
+        sgml_data.get("has_appendix_tag", False)
+        or bool(re.search(r"Schedule\s+[A-Z\d]", sgml_data["text"]))
+    )
     if appendix_in_pdf and not appendix_in_sgml:
         score -= 0.5
         _add_issue(result, "completeness", "minor",
@@ -2051,8 +2075,35 @@ def check_word_gaps(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
             missing_tail = ' '.join(missing_tail_words)
             if _norm(missing_tail) in sgml_blob_norm:
                 continue  # tail present elsewhere — not a truncation
+            # Guard against PyMuPDF paragraph-merge false positives: when the
+            # PDF extractor merges multiple SGML paragraphs into one large
+            # "paragraph", D8-b fires because coverage is low — but the
+            # "missing tail" is actually present in the SGML in adjacent
+            # paragraphs. If the first 5 words of the tail form a known SGML
+            # 5-gram, the content exists — this is a merge artifact, not a
+            # real truncation.
+            if (len(missing_tail_words) >= 5
+                    and tuple(missing_tail_words[:5]) in sgml_ngrams_set):
+                continue
+            # Additional merge-artifact guard: very long PDF "paragraphs"
+            # (>50 words) where only a tiny fraction matched are almost
+            # always table cells + section headers merged by PyMuPDF.
+            # Require at least 15 matched words before flagging long paras.
+            if pdf_len > 50 and matched_ahead < 15:
+                continue
             if _is_omittable(missing_tail):
                 continue
+            # Fragmented-SGML guard: if ≥55% of 4-grams from the missing tail
+            # appear anywhere in the SGML blob, the content is present but split
+            # across SGML elements by PyMuPDF paragraph merging — not a real truncation.
+            if len(missing_tail_words) >= 8:
+                _tail_4gs = [
+                    ' '.join(missing_tail_words[_ti:_ti + 4])
+                    for _ti in range(len(missing_tail_words) - 3)
+                ]
+                _found_4g = sum(1 for _g in _tail_4gs if _g in sgml_blob_norm)
+                if _found_4g / len(_tail_4gs) > 0.55:
+                    continue  # majority of tail present in SGML (fragmented) — merge artifact
 
             # Find line number via anchor context
             anchor_str = ' '.join(anchor[:3])
@@ -2191,6 +2242,23 @@ def check_word_gaps(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
         'was', 'be', 'that', 'this', 'it', 'as', 'at', 'by', 'for',
         'on', 'with', 'not', 'from', 'its', 'into', 'we', 'our',
     })
+    # Words that indicate legal/regulatory body text rather than a contact block.
+    # If an interior gap (D8-e) contains NONE of these, it is likely a name list,
+    # signature block, or other non-substantive content — skip it.
+    _LEGAL_KW_E = frozenset([
+        'section', 'subsection', 'paragraph', 'clause', 'subclause',
+        'amended', 'amend', 'amendment', 'repeal', 'repealed', 'revoked',
+        'regulation', 'regulations', 'rule', 'rules', 'instrument',
+        'requirement', 'requirements', 'obligation', 'obligations',
+        'provision', 'provisions', 'schedule', 'appendix', 'annex',
+        'agreement', 'pursuant', 'compliance', 'disclosure',
+        'exemption', 'exemptions', 'registration', 'filing',
+        'prospectus', 'securities', 'security', 'issuer', 'issuers',
+        'dealer', 'dealers', 'adviser', 'advisers', 'fund', 'funds',
+        'order', 'policy', 'policies', 'act', 'statute', 'notice',
+        'bulletin', 'effective', 'adopted', 'applies', 'apply',
+        'permitted', 'prohibited', 'required', 'written',
+    ])
     # Seed dedup with gaps already reported by D8/D8-b/D8-c/D8-d
     seen_d8e: set[str] = {g['missing'][:50] for g in gaps}
 
@@ -2240,6 +2308,24 @@ def check_word_gaps(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
                 continue
             # Contextual guard: not present in the local SGML window
             if missing_nrm in sgml_win_text:
+                continue
+            # Global SGML blob check: text may be present in a different paragraph
+            if missing_nrm in sgml_blob_norm:
+                continue
+            # For longer gaps, check 4-gram coverage across the full SGML blob.
+            # If ≥55% of the gap's 4-grams are present (fragmented across elements),
+            # this is a PyMuPDF merge artefact, not a real deletion.
+            if len(missing_w) >= 8:
+                _gap_4gs = [
+                    ' '.join(missing_w[_gi:_gi + 4])
+                    for _gi in range(len(missing_w) - 3)
+                ]
+                _found_4g = sum(1 for _g in _gap_4gs if _g in sgml_blob_norm)
+                if _found_4g / len(_gap_4gs) > 0.55:
+                    continue  # majority of gap words in SGML (fragmented) — merge artifact
+            # Legal-content guard: if the gap has no regulatory/legal keywords it is
+            # likely a contact block, name list, or signature line — skip it.
+            if len(missing_w) >= 5 and not any(w in _LEGAL_KW_E for w in missing_w):
                 continue
             sig = missing_nrm[:50]
             if sig in seen_d8e:

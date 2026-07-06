@@ -260,6 +260,151 @@ def _extract_pdf_sections(pdf_data) -> list[dict]:
     return sections
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# SGML-guided PDF section split (FIX for body-deletion truncation blind-spot)
+#
+# ROOT CAUSE (diagnostic 2026-07-06): For flat-PDF documents PyMuPDF returns
+# one section containing all paragraphs.  The LLM window then captures only
+# the first 10K chars → deletions at chars 40K–50K are invisible.
+#
+# FIX: Use the SGML section headings as ground truth.  Search every PDF
+# paragraph for a text match to each SGML heading.  When found, use that
+# paragraph as a section boundary.  This converts a flat-PDF into N properly
+# paired sections WITHOUT expanding the LLM content window — each section
+# pair stays within the safe 2,800-char per-section limit.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _sgml_guided_pdf_split(
+    pdf_data,
+    sgml_sections: list[dict],
+) -> list[dict]:
+    """
+    Locate SGML section heading texts inside the PDF paragraphs and use
+    them as split points to produce per-section PDF content.
+
+    Only activates for flat-PDF docs (caller already verified len(pdf_sections)==1
+    and len(sgml_sections) >= 3).
+
+    Two-strategy search per heading:
+      S1 – Exact case-insensitive substring in the first 300 chars of a paragraph.
+           Handles "PART 3 PRE-HEARING MATTERS 3.1 …" where the heading is
+           embedded at the very start of a long merged paragraph.
+      S2 – Coverage: what fraction of heading content-words appear in the
+           first N words of the paragraph (N = len(heading_words)*3 + 10).
+           Handles shorter headings that appear near the paragraph start.
+
+    Returns list of {"heading", "content"} dicts, or [] if < 2 splits found.
+    """
+    # Candidate SGML headings to search for in the PDF
+    # Require ≥ 2 content words (single-word headings like "General" / "Hearings"
+    # are too ambiguous to reliably locate in PDF text).
+    _STOP = frozenset({
+        "the", "a", "an", "of", "and", "or", "to", "in", "for", "is", "are",
+        "by", "with", "that", "this", "be", "from", "as", "at", "on", "not",
+        "if", "its", "it",
+    })
+
+    def _content_words(text: str) -> set[str]:
+        return {w for w in re.findall(r"[a-z]+", text.lower()) if w not in _STOP and len(w) > 2}
+
+    def _normalize(text: str) -> str:
+        """Lower-case + collapse em/en-dashes and hyphens → space."""
+        return re.sub(r"[—–\-]+", " ", text.lower()).strip()
+
+    heading_targets = [
+        s for s in sgml_sections
+        if (s["heading"]
+            and s["heading"] not in ("Introduction/Preamble", "Document")
+            and len(_content_words(s["heading"])) >= 2)
+    ]
+    if len(heading_targets) < 2:
+        return []
+
+    # Search PDF paragraphs for each SGML heading
+    found: list[tuple[int, str, dict]] = []   # (para_idx, heading_text, sgml_sec)
+    used_para_idxs: set[int] = set()
+
+    for sgml_sec in heading_targets:
+        h = sgml_sec["heading"]
+        h_words = _content_words(h)
+        h_norm = _normalize(h)
+        if len(h_words) < 2:
+            continue
+
+        best_idx, best_score = -1, 0.0
+        COVERAGE_THRESHOLD = 0.75   # ≥75% of heading content-words must appear
+
+        for para_idx, para in enumerate(pdf_data.paragraphs):
+            if para_idx in used_para_idxs:
+                continue
+
+            score = 0.0
+
+            # ── Strategy 1: exact substring in first 300 chars ───────────────
+            para_prefix_300 = _normalize(para[:300])
+            if h_norm in para_prefix_300:
+                # Closer to start → higher score
+                pos = para_prefix_300.find(h_norm)
+                score = max(score, 0.9 + 0.1 * max(0.0, 1.0 - pos / 300.0))
+
+            # ── Strategy 2: content-word coverage in first N words ───────────
+            if score < COVERAGE_THRESHOLD:
+                n_prefix = len(h_words) * 3 + 10
+                prefix_text = " ".join(para.split()[:n_prefix])
+                prefix_cwords = _content_words(prefix_text)
+                coverage = len(h_words & prefix_cwords) / len(h_words)
+                score = max(score, coverage)
+
+            if score >= COVERAGE_THRESHOLD and score > best_score:
+                best_score, best_idx = score, para_idx
+
+        if best_idx >= 0:
+            found.append((best_idx, h, sgml_sec))
+            used_para_idxs.add(best_idx)
+
+    if len(found) < 2:
+        return []   # Too few splits found → caller uses flat-PDF fallback
+
+    # Sort by PDF paragraph order
+    found.sort(key=lambda x: x[0])
+
+    # Remove duplicate para indices (same paragraph matched by multiple headings)
+    deduped: list[tuple[int, str, dict]] = []
+    seen: set[int] = set()
+    for idx, h, sec in found:
+        if idx not in seen:
+            deduped.append((idx, h, sec))
+            seen.add(idx)
+
+    if len(deduped) < 2:
+        return []
+
+    sections: list[dict] = []
+
+    # Preamble: everything before the first detected heading
+    first_idx = deduped[0][0]
+    if first_idx > 0:
+        preamble_text = " ".join(pdf_data.paragraphs[:first_idx])
+        if len(preamble_text.split()) >= 8:
+            sections.append({
+                "heading": "Preamble",
+                "content": preamble_text[:_MAX_SECTION_CHARS],
+            })
+
+    # Body sections: content between consecutive split points
+    for i, (para_idx, heading, _sgml_sec) in enumerate(deduped):
+        next_idx = deduped[i + 1][0] if i + 1 < len(deduped) else len(pdf_data.paragraphs)
+        # Include the heading paragraph itself + all following body paragraphs
+        body_paras = pdf_data.paragraphs[para_idx: next_idx]
+        content = " ".join(body_paras)
+        sections.append({
+            "heading": heading,
+            "content": content[:_MAX_SECTION_CHARS],
+        })
+
+    return sections if len(sections) >= 2 else []
+
+
 def _pair_sections(pdf_sections: list[dict],
                    sgml_sections: list[dict]) -> list[dict]:
     """
@@ -632,6 +777,209 @@ def _call_preamble_compare(client, pdf_intro_paragraphs: list[str],
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 1c — Full-document body paragraph sweep
+#
+# ROOT CAUSE (diagnostic 2026-07-06): The main LLM batch sees only the FIRST
+# 10,000 chars of PDF and 5,600 chars of SGML.  Deleted content at positions
+# 40,000–50,000 in the PDF (e.g. 15-601, 11-502) is COMPLETELY INVISIBLE.
+#
+# Fix: deterministic 5-gram pre-filter over ALL PDF paragraphs (not truncated),
+# then a focused LLM confirmation call ONLY for flagged candidates.  This gives:
+#   • Full document coverage  (no truncation blind-spot)
+#   • High precision (pre-filter avoids sending 40K to LLM → avoids false positives)
+#   • Targeted LLM (single paragraph vs. SGML context → accurate decision)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Tokens that indicate legitimately absent content — skip these paragraphs
+_BODY_OMIT_RE = re.compile(
+    r"^\s*\d+\s*$"                           # standalone page number
+    r"|^\s*(Home|Sign In|Français|English|Ontario\.ca)\s*$"  # nav links
+    r"|^[A-Z\s]{3,60}$"                      # all-caps heading line (structural)
+    r"|^\s*[\u2022\u25cf\u2013\-]\s*$"       # lone bullet / dash
+    r"|OSCB\s+Bulletin|B\.\d+\s+Notices"    # OSCB section markers
+    r"|^www\.|^http",                         # bare URL lines
+    re.IGNORECASE,
+)
+
+# Phrases that are common enough in regulatory text that a single match
+# doesn't prove the paragraph is present (low-information phrases)
+_HIGH_NOISE_WORDS = frozenset({
+    "the", "a", "an", "of", "and", "or", "to", "in", "for", "is",
+    "are", "by", "with", "that", "this", "it", "its", "as", "at", "on",
+    "be", "was", "has", "have", "had", "will", "shall", "may", "must",
+    "not", "any", "all", "each", "no", "if", "where", "who", "which",
+})
+
+_BODY_PARA_LLM_PROMPT = """You are BODY_PARA_CHECK — a precise content-fidelity checker
+for Thomson Reuters Canada legal document conversions (PDF → Carswell SGML).
+
+ONE PDF PARAGRAPH is provided below.  Check whether its SUBSTANTIVE CONTENT is
+genuinely absent from the SGML.
+
+RULES:
+• Minor wording differences, punctuation changes → NOT missing
+• Same content in different structural position (different section) → NOT missing
+• Completely absent from SGML with no equivalent → MISSING
+• Partial content (sentence truncated) → flag as MISSING
+
+DO NOT FLAG as missing:
+  - Page numbers, headers/footers
+  - TOC entries or sub-entries
+  - Contact name / address blocks that appear elsewhere in SGML
+  - Navigation links (Home, Sign In, etc.)
+  - Footnote numbers or symbols
+
+RESPOND with JSON only:
+{"missing": true|false, "confidence": 0.95, "reason": "brief explanation max 80 chars"}"""
+
+
+def _focused_para_llm_check(client, para_text: str, sgml_blob: str,
+                              doc_type: str) -> tuple[bool, float, str]:
+    """
+    Focused LLM check: is this specific PDF paragraph missing from the SGML?
+
+    Called only for paragraphs that already failed the deterministic 5-gram
+    pre-filter (coverage < 25%).  Returns (missing, confidence, reason).
+    """
+    # Send the paragraph + first 8K of SGML blob as context
+    blob_excerpt = sgml_blob[:8_000]
+    blob_note = f"[+{len(sgml_blob)-8000} more chars]" if len(sgml_blob) > 8_000 else ""
+
+    user = (
+        f"Document type: {doc_type}\n\n"
+        f"PDF PARAGRAPH TO CHECK:\n\"{para_text[:500]}\"\n\n"
+        f"SGML TEXT (first 8,000 chars for lookup):\n{blob_excerpt}{blob_note}\n\n"
+        "Is the PDF paragraph above GENUINELY ABSENT from the SGML?\n"
+        "Respond with ONLY the JSON object."
+    )
+
+    for attempt in range(2):
+        try:
+            with client.messages.stream(
+                model=_MODEL,
+                max_tokens=128,
+                temperature=_TEMPERATURE,
+                system=_BODY_PARA_LLM_PROMPT,
+                messages=[{"role": "user", "content": user}],
+            ) as stream:
+                raw = stream.get_final_text()
+
+            cleaned = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
+            start = cleaned.find("{")
+            if start == -1:
+                return False, 0.0, "parse error"
+            data = json.loads(cleaned[start:])
+            return bool(data.get("missing")), float(data.get("confidence", 0.8)), data.get("reason", "")
+
+        except Exception as exc:
+            if attempt == 0:
+                time.sleep(1)
+            else:
+                pass
+    return False, 0.0, "llm error"
+
+
+def _body_paragraph_sweep(
+    pdf_data,
+    sgml_blob: str,
+    client,
+    doc_type: str,
+    already_found_missing: set,
+) -> list[dict]:
+    """
+    Full-document body paragraph sweep:
+
+    1. Iterate over ALL PDF paragraphs (no 10K truncation limit).
+    2. For each substantive paragraph (≥15 content words), compute 5-gram
+       coverage against the full sgml_blob.
+    3. If coverage < 0.25 → paragraph is a candidate for "missing from SGML".
+    4. Run a focused LLM call on the candidate to confirm.
+    5. If LLM confirms missing → add to results.
+
+    This fixes the TRUNCATION root cause: deleted content at PDF char 40-50K
+    is now visible because we iterate over ALL paragraphs, not just first 10K.
+
+    De-duplicates against already_found_missing (from Phase 2 LLM batch).
+    """
+    results: list[dict] = []
+    if not sgml_blob or not pdf_data.paragraphs:
+        return results
+
+    # Build corpus 5-grams from the full SGML blob (consistent, no stop words)
+    blob_words = re.findall(r"[a-zA-ZÀ-ÿ0-9]+", sgml_blob.lower())
+    if len(blob_words) < 5:
+        return results
+    blob_5grams: set[tuple] = {
+        tuple(blob_words[i: i + 5]) for i in range(len(blob_words) - 4)
+    }
+
+    candidates_checked = 0
+    llm_calls = 0
+    _MAX_LLM_CALLS = 5   # cap to avoid excessive API usage
+
+    for para_idx, para in enumerate(pdf_data.paragraphs):
+        # Skip short / boilerplate paragraphs
+        words = para.split()
+        if len(words) < 15:
+            continue
+        if _BODY_OMIT_RE.search(para.strip()):
+            continue
+
+        # Skip if already found by Phase 2 LLM
+        para_key = para[:60].lower()
+        if any(para_key in found for found in already_found_missing):
+            continue
+
+        # Compute content-word 5-gram coverage against SGML blob
+        content_words = [w for w in re.findall(r"[a-zA-ZÀ-ÿ0-9]+", para.lower())
+                         if w not in _HIGH_NOISE_WORDS and len(w) > 2]
+        if len(content_words) < 5:
+            continue
+
+        grams = [tuple(content_words[i: i + 5]) for i in range(len(content_words) - 4)]
+        if not grams:
+            continue
+
+        matched = sum(1 for g in grams if g in blob_5grams)
+        coverage = matched / len(grams)
+
+        candidates_checked += 1
+
+        # High-coverage → definitely present in SGML → skip
+        if coverage >= 0.25:
+            continue
+
+        # Low-coverage candidate → verify with targeted LLM call
+        if llm_calls >= _MAX_LLM_CALLS:
+            # Cap reached — add as minor warning without LLM confirmation
+            results.append({
+                "text": para[:200],
+                "location_hint": f"Body paragraph #{para_idx} (5-gram pre-filter only, LLM cap reached)",
+                "severity": "minor",
+                "confidence": round(1.0 - coverage, 2),
+            })
+            continue
+
+        llm_calls += 1
+        missing, confidence, reason = _focused_para_llm_check(client, para, sgml_blob, doc_type)
+
+        if missing and confidence >= 0.70:
+            results.append({
+                "text": para[:200],
+                "location_hint": f"Body paragraph #{para_idx} (5-gram {coverage:.0%} + LLM confirmed: {reason})",
+                "severity": "major",
+                "confidence": round(confidence, 2),
+            })
+
+    if candidates_checked > 0:
+        print(f"   BODY_SWEEP: {len(pdf_data.paragraphs)} paras scanned, "
+              f"{candidates_checked} low-coverage candidates, {llm_calls} LLM calls, "
+              f"{len(results)} new missing found")
+
+    return results
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public entry point — called by source_validator.py
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -693,17 +1041,25 @@ def check_text_semantic(
         sgml_sections = [{"heading": "Document",
                            "content": sgml_data.get("text", "")[:_MAX_SECTION_CHARS]}]
 
-    # Flat-PDF fix: for flat documents (PyMuPDF found no heading boundaries)
-    # use more of the PDF text than the default _MAX_SECTION_CHARS.
-    # NOTE: diagnostic assessment (2026-07-06) showed that expanding to 40K
-    # causes the LLM to generate 5-6 false-positive "missing" paragraphs on
-    # clean documents — precision degrades unacceptably.  Keep the limit at
-    # 10,000 chars which balances precision vs recall for the current LLM.
+    # ── SGML-guided PDF split (fixes truncation blind-spot) ──────────────────
+    # When PyMuPDF finds only 1 PDF section (flat) but SGML has ≥3 sections,
+    # use the SGML headings to locate section boundaries inside the PDF text.
+    # This converts one 10K-char flat comparison into N paired comparisons
+    # covering the FULL document without expanding LLM context limits.
+    if len(pdf_sections) == 1 and len(sgml_sections) >= 3:
+        guided = _sgml_guided_pdf_split(pdf_data, sgml_sections)
+        if len(guided) >= 2:
+            pdf_sections = guided
+            result.warnings.append(
+                f"D3/D8: SGML-guided split → {len(pdf_sections)} PDF sections "
+                f"(was flat). Covers full doc without truncation."
+            )
+
+    # Flat-PDF fallback: if guided split did not fire or produced only 1 section,
+    # keep 10K window (expanding to 40K caused 5-6 false positives per clean doc).
     _FLAT_PDF_LIMIT = 10_000
-    _full_flat_pdf_text: str = ""   # kept for future multi-window option
     if len(pdf_sections) == 1:
-        _full_flat_pdf_text = " ".join(pdf_data.paragraphs)
-        pdf_sections[0]["content"] = _full_flat_pdf_text[:_FLAT_PDF_LIMIT]
+        pdf_sections[0]["content"] = " ".join(pdf_data.paragraphs)[:_FLAT_PDF_LIMIT]
 
     # Pair sections
     pairs = _pair_sections(pdf_sections, sgml_sections)

@@ -162,7 +162,24 @@ def _extract_sgml_sections(raw_sgml: str) -> list[dict]:
                  "raw_len": len(full_text)}]
 
     sections: list[dict] = []
-    for part in parts[1:]:   # skip preamble (everything before first BLOCK)
+
+    # ── Include preamble (everything before the first BLOCKn) as a section ───
+    # This is critical: the preamble contains the document intro and conclusion
+    # paragraphs (e.g. "The text of rule and policy consolidations on the
+    # websites of CSA members will be updated...").  If the business deletes a
+    # paragraph from the preamble, the agent MUST see the preamble explicitly —
+    # it cannot rely on the blob alone because a short deleted paragraph blends
+    # invisibly into 6000 chars of surrounding text.
+    preamble_raw = parts[0]
+    preamble_text = _strip_tags(preamble_raw).strip()
+    if len(preamble_text.split()) >= 10:   # only add if preamble has substance
+        sections.append({
+            "heading": "Introduction/Preamble",
+            "content": preamble_text[:_MAX_SECTION_CHARS],
+            "raw_len": len(preamble_text),
+        })
+
+    for part in parts[1:]:   # body sections after the first BLOCK
         # Extract heading from first <TI> in this block
         ti_m = re.search(r"<TI[^>]*>(.*?)</TI>", part, re.DOTALL)
         heading = _strip_tags(ti_m.group(1)) if ti_m else ""
@@ -320,7 +337,10 @@ IMPORTANT DISTINCTIONS — do NOT flag these as issues:
 • LEGITIMATELY ABSENT from SGML (never flag as missing):
   - Page numbers, running headers/footers, copyright footers
   - Table of Contents entries and dot-leaders (………)
-  - Website navigation (Home, Sign In, Français, Ontario.ca)
+  - Website NAVIGATION LINKS only: e.g. "Home", "Sign In", "Français", "Ontario.ca"
+    (IMPORTANT: regulatory text ABOUT websites — e.g. "text of rule and policy
+    consolidations on the websites of CSA members will be updated to reflect
+    these amendments" — is substantive body text and MUST be in the SGML)
   - Footnote definitions at page bottom ("19 See NI 33-109 …")
   - TOC sub-entries (roman numerals i. ii. iii. iv.)
   - Standalone date-only lines used as page headers ("June 9, 2023")
@@ -333,7 +353,9 @@ IMPORTANT DISTINCTIONS — do NOT flag these as issues:
 • Minor punctuation or capitalisation differences are NOT content issues.
 
 FLAG as issues ONLY:
-• Text that is genuinely absent from the entire SGML document
+• Text that is genuinely absent from the entire SGML document — this includes
+  short closing paragraphs, website-update notices, and "Please refer questions
+  to" contact lines that are present in the PDF but entirely absent from SGML
 • Numbers, proper names, or regulatory identifiers materially changed
   (e.g. section "14.1.3" became "4.1.3"; "(i.1)" became "(i.(1)")
 • Sentences or clauses truncated mid-way without equivalent elsewhere
@@ -485,6 +507,129 @@ def _add_issue_fn(result, dimension: str, severity: str, description: str,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase 1b — Focused preamble sentence-level LLM comparison
+#
+# The main _call_batch sees the "flat PDF" (entire document in one section pair)
+# and does high-level semantic comparison — it misses single-sentence PARTIAL
+# deletions (prefix truncations) in the intro.  This dedicated call compares
+# the intro paragraphs SENTENCE-BY-SENTENCE with a verbatim-focused prompt.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PREAMBLE_SYSTEM_PROMPT = """You are PREAMBLE_COMPARE — a precision sentence-level
+comparator for Thomson Reuters Canada legal document conversions (PDF → Carswell SGML).
+
+YOUR TASK: Compare each numbered PDF introduction paragraph SENTENCE BY SENTENCE against
+the SGML preamble text.  Find sentences that are DELETED or have their BEGINNING TRUNCATED.
+
+VERBATIM RULE: "CSA members will be updated" is DIFFERENT from "The text of rule and
+policy consolidations on the websites of CSA members will be updated" — if the PDF has
+the longer version but the SGML only has the shorter version (with the beginning missing),
+that is ALTERED content and must be flagged.
+
+DO NOT FLAG:
+  - Contact person names and addresses (may appear in different format elsewhere)
+  - NI instrument titles that appear as SGML headings in other document sections
+  - Website NAVIGATION LINKS: "Home", "Sign In", "Français", "English"
+  - Page numbers or running headers
+  - Minor punctuation differences or capitalisation differences
+  - Sentences that appear LATER in the SGML (out of order is acceptable)
+
+OUTPUT: JSON array — empty [] if all sentences are faithfully present, otherwise:
+[
+  {
+    "type": "missing",
+    "pdf_text": "<exact PDF sentence, max 200 chars>",
+    "severity": "major",
+    "confidence": 0.90
+  },
+  {
+    "type": "altered",
+    "pdf_text": "<full PDF sentence, max 200 chars>",
+    "sgml_version": "<truncated SGML version>",
+    "issue": "prefix deleted",
+    "severity": "major",
+    "confidence": 0.95
+  }
+]
+Return ONLY the JSON array — no prose."""
+
+
+def _call_preamble_compare(client, pdf_intro_paragraphs: list[str],
+                            sgml_preamble_text: str, sgml_blob: str) -> dict:
+    """
+    Focused verbatim sentence-level LLM comparison for the intro/preamble.
+
+    Returns {"missing": [...], "altered": [...]} using the standard schema.
+    """
+    if not pdf_intro_paragraphs or not sgml_preamble_text:
+        return {"missing": [], "altered": []}
+
+    numbered = "\n".join(f"[{i + 1}] {p}" for i, p in enumerate(pdf_intro_paragraphs))
+
+    user = (
+        "PDF INTRODUCTION PARAGRAPHS (each may contain multiple sentences):\n"
+        f"{numbered}\n\n"
+        f"SGML PREAMBLE TEXT:\n{sgml_preamble_text[:2_500]}\n\n"
+        f"FULL SGML BLOB (for cross-section presence verification):\n{sgml_blob[:4_000]}\n\n"
+        "INSTRUCTIONS:\n"
+        "1. For each PDF paragraph, split it into individual sentences at period+space boundaries.\n"
+        "2. For each sentence (≥8 words), check if it appears in the SGML — verbatim or near-verbatim.\n"
+        "3. If a sentence's FIRST 5+ WORDS are NOT in the SGML but the ENDING WORDS ARE, "
+        "the sentence was TRUNCATED (beginning deleted) — flag as 'altered'.\n"
+        "4. If the sentence is entirely absent, flag as 'missing'.\n"
+        "5. Look especially for sentences about websites, update notices, or policy references "
+        "whose opening clause may have been removed from the SGML.\n\n"
+        "Return ONLY the JSON array. Return [] if all content is faithfully present."
+    )
+
+    result: dict = {"missing": [], "altered": []}
+
+    for attempt in range(2):
+        try:
+            with client.messages.stream(
+                model=_MODEL,
+                max_tokens=1_024,
+                temperature=_TEMPERATURE,
+                system=_PREAMBLE_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user}],
+            ) as stream:
+                raw = stream.get_final_text()
+
+            cleaned = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
+            start = cleaned.find("[")
+            if start == -1:
+                return result
+            data = json.loads(cleaned[start:])
+
+            for item in data:
+                itype = item.get("type", "")
+                if itype == "missing":
+                    result["missing"].append({
+                        "text": item.get("pdf_text", "")[:200],
+                        "location_hint": "Introduction/Preamble (preamble-compare)",
+                        "severity": item.get("severity", "major"),
+                        "confidence": item.get("confidence", 0.9),
+                    })
+                elif itype == "altered":
+                    result["altered"].append({
+                        "original_pdf": item.get("pdf_text", "")[:200],
+                        "sgml_version": item.get("sgml_version", "")[:200],
+                        "location_hint": "Introduction/Preamble (preamble-compare)",
+                        "severity": item.get("severity", "major"),
+                    })
+            return result
+
+        except Exception as exc:
+            if attempt == 0:
+                print(f"   ⚠️  PREAMBLE_COMPARE retry: {exc}")
+                time.sleep(2)
+            else:
+                print(f"   ⚠️  PREAMBLE_COMPARE failed: {exc}")
+
+    return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Public entry point — called by source_validator.py
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -569,6 +714,48 @@ def check_text_semantic(
     # SGML blob for cross-section presence checks (strip tags once)
     sgml_blob = sgml_data.get("text", "") if sgml_data else _strip_tags(raw_sgml)
 
+    # ── Phase 1b: Focused preamble sentence-level comparison ─────────────────
+    # The main section-batch LLM call (Phase 2) does high-level semantic
+    # comparison and misses single-sentence PARTIAL deletions (prefix
+    # truncations) in the intro.  This dedicated call compares the intro
+    # paragraphs sentence-by-sentence with a verbatim-focused prompt.
+    preamble_issues: dict = {"missing": [], "altered": []}
+    preamble_sgml_section = next(
+        (s for s in sgml_sections
+         if "preamble" in s["heading"].lower() or "introduction" in s["heading"].lower()),
+        None,
+    )
+
+    _ANNEX_HEADING_RE = re.compile(
+        r"^(Annex|Schedule|Appendix|Local\s+Amendments?\s+to)\s+[A-Z]",
+        re.IGNORECASE,
+    )
+
+    if preamble_sgml_section and client and re.search(
+        r'LABEL="Annex"', raw_sgml or ""
+    ):
+        # Only run preamble-compare for Local Amendment Notice documents
+        # (SGML contains <APPENDIX LABEL="Annex"...>) — the specific document
+        # class where the preamble is clearly separated from the Annex body
+        # sections and where single-sentence deletions in the intro are
+        # business-reported issues (11-349 pattern).
+        # BLOCK1-structured policy manuals and instruments use the main LLM
+        # batch for their section-level comparison and do not need this extra call.
+        pdf_intro: list[str] = []
+        for para in pdf_data.paragraphs:
+            if _ANNEX_HEADING_RE.match(para.strip()):
+                break
+            if len(para.split()) >= 8:
+                pdf_intro.append(para)
+            if len(pdf_intro) >= 8:   # first 8 substantive intro paragraphs
+                break
+        if pdf_intro:
+            print("   CONTENT_AGENT preamble-compare: "
+                  f"{len(pdf_intro)} PDF intro paragraph(s)")
+            preamble_issues = _call_preamble_compare(
+                client, pdf_intro, preamble_sgml_section["content"], sgml_blob
+            )
+
     # ── Phase 2: Batched LLM comparison ──────────────────────────────────────
     all_missing: list[dict] = []
     all_altered: list[dict] = []
@@ -590,6 +777,18 @@ def check_text_semantic(
                 all_summaries.append(
                     f"Section {item.get('section_idx', '?')}: fidelity={fid}"
                 )
+
+    # ── Merge preamble check results into main results ────────────────────────
+    # De-duplicate: skip items already found by Phase 2 LLM
+    llm_missing_texts = {m["text"][:60].lower() for m in all_missing}
+    for pm in preamble_issues.get("missing", []):
+        if pm["text"][:60].lower() not in llm_missing_texts:
+            all_missing.append(pm)
+
+    llm_altered_pdfs = {a["original_pdf"][:60].lower() for a in all_altered}
+    for pa in preamble_issues.get("altered", []):
+        if pa["original_pdf"][:60].lower() not in llm_altered_pdfs:
+            all_altered.append(pa)
 
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]

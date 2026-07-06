@@ -39,6 +39,9 @@ from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Optional
 
+# Semantic agent replaces deterministic D3 + D8 (see semantic_content_agent.py)
+from validator.level4_source_compare.semantic_content_agent import check_text_semantic
+
 # ── Optional dependencies ─────────────────────────────────────────────────────
 try:
     import fitz  # PyMuPDF
@@ -2558,11 +2561,13 @@ def validate_source_comparison(
         result.tagging_score = 5.0  # assume pass on error
         result.warnings.append(f"D2 check error (skipped): {e}")
 
+    # D3 + D8: replaced by SemanticContentAgent (no deterministic word-matching)
+    _doc_type = sgml_data.get("attrs", {}).get("LABEL", "Notice")
     try:
-        check_text_accuracy(pdf, sgml_data, result, docx_data=_docx_data)
+        check_text_semantic(pdf, sgml_data, result, doc_type=_doc_type)
     except Exception as e:
         result.text_score = 8.0
-        result.warnings.append(f"D3 check error (skipped): {e}")
+        result.warnings.append(f"D3/D8 semantic agent error (skipped): {e}")
 
     try:
         check_completeness(pdf, sgml_data, result, docx_data=_docx_data)
@@ -2582,10 +2587,7 @@ def validate_source_comparison(
         result.metadata_score = 3.0
         result.warnings.append(f"D7 check error (skipped): {e}")
 
-    try:
-        check_word_gaps(pdf, raw_sgml, result)
-    except Exception as e:
-        result.warnings.append(f"D8 word-gap check error (skipped): {e}")
+    # D8 word-gap check removed — now handled by SemanticContentAgent above.
 
     try:
         check_contact_info(pdf, raw_sgml, result)

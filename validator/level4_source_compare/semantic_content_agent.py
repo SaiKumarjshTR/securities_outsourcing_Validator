@@ -280,12 +280,14 @@ def _pair_sections(pdf_sections: list[dict],
                 for p in pdf_sections]
 
     # ── Special case: flat PDF (single section) ───────────────────────────────
-    # Combine all SGML sections into one view so the agent sees the full document
+    # Combine all SGML sections into one view so the agent sees the full document.
+    # NOTE: diagnostic assessment showed expanding beyond 5,600 chars causes LLM
+    # to generate false-positive missing-paragraph findings.  Keep combined limit.
     if len(pdf_sections) == 1:
         combined_heading = " | ".join(s["heading"] for s in sgml_sections if s["heading"])[:200]
         combined_content = "\n\n".join(
             f"[{s['heading']}]\n{s['content']}" for s in sgml_sections
-        )[:_MAX_SECTION_CHARS * 2]   # allow larger combined view
+        )[:_MAX_SECTION_CHARS * 2]   # 5,600 chars — proven safe limit
         return [{
             "pdf": pdf_sections[0],
             "sgml": {"heading": combined_heading, "content": combined_content},
@@ -691,14 +693,17 @@ def check_text_semantic(
         sgml_sections = [{"heading": "Document",
                            "content": sgml_data.get("text", "")[:_MAX_SECTION_CHARS]}]
 
-    # Flat-PDF fix: when PyMuPDF could not detect section headings (or merged
-    # everything into one paragraph), the single PDF "section" is truncated at
-    # _MAX_SECTION_CHARS.  For flat documents we must use the FULL paragraph
-    # text so the LLM can see content from every page (e.g. Annex B text that
-    # starts at position 4000+ in the joined text).
-    _FLAT_PDF_LIMIT = 10_000   # generous limit; Claude Opus handles ~200K tokens
+    # Flat-PDF fix: for flat documents (PyMuPDF found no heading boundaries)
+    # use more of the PDF text than the default _MAX_SECTION_CHARS.
+    # NOTE: diagnostic assessment (2026-07-06) showed that expanding to 40K
+    # causes the LLM to generate 5-6 false-positive "missing" paragraphs on
+    # clean documents — precision degrades unacceptably.  Keep the limit at
+    # 10,000 chars which balances precision vs recall for the current LLM.
+    _FLAT_PDF_LIMIT = 10_000
+    _full_flat_pdf_text: str = ""   # kept for future multi-window option
     if len(pdf_sections) == 1:
-        pdf_sections[0]["content"] = " ".join(pdf_data.paragraphs)[:_FLAT_PDF_LIMIT]
+        _full_flat_pdf_text = " ".join(pdf_data.paragraphs)
+        pdf_sections[0]["content"] = _full_flat_pdf_text[:_FLAT_PDF_LIMIT]
 
     # Pair sections
     pairs = _pair_sections(pdf_sections, sgml_sections)

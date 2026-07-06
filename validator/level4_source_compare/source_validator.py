@@ -2444,14 +2444,20 @@ _RE_URL = re.compile(
 
 def check_contact_info(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
     """
-    D9 — informational: detect phone numbers, email addresses, and URLs that
-    appear in the PDF source but are absent from the SGML.
+    D9 — detect phone numbers, email addresses, and URLs that appear in the PDF
+    source but are absent from the SGML.
+
+    SCORING FIX (diagnostic assessment): D9 findings previously had NO score
+    deduction despite being flagged as 'major' issues.  Now each missing contact
+    item deducts 0.3 pts from completeness_score (capped at -1.5 pts total for
+    D9).  This makes URL/email/phone deletions visible in the normalised score.
     """
     if not pdf.paragraphs:
         return
 
     pdf_text  = '\n'.join(pdf.paragraphs)
     sgml_text = re.sub(r'<[^>]+>', ' ', raw_sgml)
+    d9_count = [0]   # mutable counter for deduction cap
 
     def _find_missing(pattern, label):
         pdf_items  = set(m.group(0).strip() for m in pattern.finditer(pdf_text))
@@ -2463,7 +2469,6 @@ def check_contact_info(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
         missing = [item for item in sorted(pdf_items)
                    if _norm_item(item) not in sgml_norm]
         for item in missing:
-            # Find approximate SGML line — look for nearby words in PDF context
             _add_issue(
                 result,
                 "contact_info",
@@ -2472,10 +2477,16 @@ def check_contact_info(pdf: _PDFData, raw_sgml: str, result: L4Result) -> None:
                 location="",
                 impact="HITL: contact info gap",
             )
+            d9_count[0] += 1
 
     _find_missing(_RE_PHONE, "Phone number")
     _find_missing(_RE_EMAIL, "Email address")
     _find_missing(_RE_URL,   "URL/hyperlink")
+
+    # Apply score deduction for D9 findings (capped at 1.5 pts)
+    if d9_count[0] > 0:
+        deduction = min(1.5, d9_count[0] * 0.3)
+        result.completeness_score = max(0.0, result.completeness_score - deduction)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

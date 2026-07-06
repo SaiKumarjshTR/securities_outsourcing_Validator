@@ -2561,10 +2561,11 @@ def validate_source_comparison(
         result.tagging_score = 5.0  # assume pass on error
         result.warnings.append(f"D2 check error (skipped): {e}")
 
-    # D3 + D8: replaced by SemanticContentAgent (no deterministic word-matching)
+    # D3 + D8: replaced by SemanticContentAgent v2 (section-aware, batched)
     _doc_type = sgml_data.get("attrs", {}).get("LABEL", "Notice")
     try:
-        check_text_semantic(pdf, sgml_data, result, doc_type=_doc_type)
+        check_text_semantic(pdf, sgml_data, result,
+                            doc_type=_doc_type, raw_sgml=raw_sgml)
     except Exception as e:
         result.text_score = 8.0
         result.warnings.append(f"D3/D8 semantic agent error (skipped): {e}")

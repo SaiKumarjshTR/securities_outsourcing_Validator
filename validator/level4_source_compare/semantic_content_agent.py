@@ -1151,6 +1151,37 @@ def check_text_semantic(
         if pa["original_pdf"][:60].lower() not in llm_altered_pdfs:
             all_altered.append(pa)
 
+    # ── Deterministic regulatory number check (Fix #4) ──────────────────────
+    # Compare XX-YYY instrument number patterns between full PDF and full SGML.
+    # Catches digit-transposition corruptions the LLM sometimes misses because
+    # numbers like "31-103" vs "31-130" look nearly identical in context.
+    _NUM_RE_D3 = re.compile(r"\b(\d{2})-(\d{3})\b")
+    pdf_full_text = " ".join(pdf_data.paragraphs)
+    pdf_nums_d3  = {m.group() for m in _NUM_RE_D3.finditer(pdf_full_text)}
+    sgml_nums_d3 = {m.group() for m in _NUM_RE_D3.finditer(sgml_blob)}
+    pdf_only_d3  = pdf_nums_d3  - sgml_nums_d3  # in PDF but not SGML
+    sgml_only_d3 = sgml_nums_d3 - pdf_nums_d3   # in SGML but not PDF
+    _llm_altered_set = {a["original_pdf"][:20].lower() for a in all_altered}
+    for _p in sorted(pdf_only_d3):
+        _pp, _ps = _p.split("-")
+        for _s in sorted(sgml_only_d3):
+            _sp, _ss = _s.split("-")
+            if _pp != _sp:
+                continue  # different numeric prefix — not a transposition
+            # Same prefix: check if suffixes are an anagram (digit rearrangement)
+            if sorted(_ps) == sorted(_ss) and _ps != _ss:
+                if _p.lower()[:20] not in _llm_altered_set:
+                    all_altered.append({
+                        "original_pdf": _p,
+                        "sgml_version": _s,
+                        "location_hint": f"Regulatory number: PDF={_p} → SGML={_s}",
+                        "severity": "critical",
+                    })
+                    result.warnings.append(
+                        f"D3: Regulatory number (deterministic): PDF={_p} → SGML={_s}"
+                    )
+                break  # one match per PDF orphan is enough
+
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]
     result.word_gaps = [

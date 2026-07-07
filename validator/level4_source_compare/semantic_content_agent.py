@@ -1321,7 +1321,6 @@ def check_text_semantic(
         if _h6:
             _sgml_ti_set6.add(_h6[:120])
 
-    _sgml_stripped_lower = _strip_tags(sgml_blob).lower()
     _TRAIL_PUNCT6 = re.compile(r'[.!?:;,)\u2019\u201d]$')
     _seen_h6: set[str] = {m.get("text", "").lower()[:60] for m in all_missing}
 
@@ -1337,17 +1336,20 @@ def check_text_semantic(
         # Must not end with sentence-terminating punctuation
         if _TRAIL_PUNCT6.search(_para6):
             continue
-        # Must have ≥2 alphabetic words (filter page numbers, bullets, etc.)
+        # Title-case ratio filter: ≥50% of alphabetic words start with uppercase.
+        # Genuine section headings are consistently title-cased; body sentences are not.
         _alpha6 = [w for w in _words6 if re.match(r'[a-zA-Z]{3,}', w)]
         if len(_alpha6) < 2:
             continue
+        _titled6 = sum(1 for w in _alpha6 if w[0].isupper())
+        if _titled6 / len(_alpha6) < 0.50:
+            continue
         _para6_norm = _para6.lower()[:120]
-        # (a) Skip if already matched to a SGML TI element
+        # (a) Skip if already matched to a SGML TI element.
+        # In a clean document the heading IS in the TI set → skipped.
+        # After corruption (TI deleted), the heading is no longer in the set → flagged.
         if any(_para6_norm in _ti6 or _ti6 in _para6_norm
                for _ti6 in _sgml_ti_set6 if _ti6):
-            continue
-        # (b) Skip if text appears anywhere in the stripped SGML body
-        if _para6.lower() in _sgml_stripped_lower:
             continue
         # Skip if already flagged in this run
         if _para6_norm[:60] in _seen_h6:

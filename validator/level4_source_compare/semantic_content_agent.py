@@ -1267,17 +1267,38 @@ def check_text_semantic(
             })
             result.warnings.append(f"D3: URL missing from SGML: {_url}")
 
-    # ── Deterministic heading check (Fix #5c) ────────────────────────────────
-    # Verify that every PDF heading is represented in the SGML section headings.
-    # Build a word pool from all SGML section headings; a PDF heading with less
-    # than 35% of its significant words (≥4 chars) found in that pool is likely
-    # absent from the SGML.  Pre-existing heading mismatches cancel out in
-    # new_missing just like the URL check above.
+    # ── Deterministic heading check (Fix #5c / Fix #8) ───────────────────────
+    # Verify that every PDF heading is represented in the SGML.
+    # Fix #8: Expand the word pool to include:
+    #   (a) SGML section headings (original)
+    #   (b) ALL <TI> element text  — catches POLIDENT titles and nested TIs
+    #       that don't appear as BLOCK-level section headings
+    #   (c) Short <BOLD> paragraph text (≤10 words) — catches documents that
+    #       use <P><BOLD>Title</BOLD></P> instead of <TI> as visual headings
+    #       (e.g. ASC staff notices with multi-line title bolded paragraphs)
+    # A PDF heading with < 40% of its significant words (≥4 chars) found in
+    # this expanded pool is considered absent from the SGML.
     _sgml_heading_pool: set[str] = set()
+    # (a) SGML section headings
     for _sec in sgml_sections:
         _sgml_heading_pool.update(
             w.lower() for w in re.findall(r"[a-zA-Z]{4,}", _sec["heading"])
         )
+    # (b) All <TI> elements in raw SGML (Fix #8) — must use raw_sgml, not
+    #     sgml_blob, because sgml_blob is fully stripped of tags.
+    if raw_sgml:
+        for _tim8 in re.finditer(r"<TI[^>]*>(.*?)</TI>", raw_sgml, re.IGNORECASE | re.DOTALL):
+            _sgml_heading_pool.update(
+                w.lower() for w in re.findall(r"[a-zA-Z]{4,}", _strip_tags(_tim8.group(1)))
+            )
+        # (c) Short <BOLD> elements acting as visual headings (Fix #8)
+        # Catches documents that use <P><BOLD>Title</BOLD></P> instead of <TI>.
+        for _bm8 in re.finditer(r"<BOLD>(.*?)</BOLD>", raw_sgml, re.IGNORECASE | re.DOTALL):
+            _bold8 = _strip_tags(_bm8.group(1)).strip()
+            if 1 < len(_bold8.split()) <= 12:   # short bold phrase = likely a heading
+                _sgml_heading_pool.update(
+                    w.lower() for w in re.findall(r"[a-zA-Z]{4,}", _bold8)
+                )
     _seen_heading_texts = {m.get("text", "").lower()[:60] for m in all_missing}
     for _ph in pdf_data.headings:
         _ph = _ph.strip()
@@ -1287,7 +1308,7 @@ def check_text_semantic(
         if not _ph_words:
             continue
         _overlap = sum(1 for w in _ph_words if w in _sgml_heading_pool)
-        if _overlap / len(_ph_words) < 0.35:
+        if _overlap / len(_ph_words) < 0.40:
             if _ph.lower()[:60] not in _seen_heading_texts:
                 all_missing.append({
                     "text": _ph,
@@ -1394,6 +1415,79 @@ def check_text_semantic(
                 f"D3: TI shortage: {_blocks_no_ti7} BLOCK section(s) missing "
                 f"a <TI> heading element — likely deleted"
             )
+
+    # ── Fix #9: Paragraph prefix truncation check ────────────────────────────
+    # Detects when the first N words of a PDF paragraph are deleted from the
+    # SGML (Type J corruption). The LLM misses short prefix deletions because
+    # 95%+ of the paragraph still matches. Example: deleting "As of April 1,
+    # 2026," from the start of a paragraph — the remaining 150 words are
+    # identical so the LLM scores it as a match.
+    #
+    # Algorithm:
+    #   For each long PDF paragraph (≥15 words):
+    #     1. Take the first PREFIX_LEN words as "prefix"
+    #     2. Build character bigrams of the lowercased prefix
+    #     3. If < 40% of prefix bigrams appear in the stripped SGML text AND
+    #        > 65% of tail words (words PREFIX_LEN+1 …) DO appear in SGML:
+    #        → the paragraph body is present but the beginning is truncated
+    #        → flag the prefix as missing text
+    _PREFIX_LEN9 = 6    # words to check at paragraph start
+    _MIN_PARA9   = 15   # only check paragraphs long enough to judge
+    # Normalize: remove all non-alphanumeric chars except spaces, lowercase,
+    # then COLLAPSE multiple spaces → prevents false positives caused by
+    # _strip_tags inserting spaces around inline tags like (<BOLD>ASC</BOLD>)
+    # which turns "commission (ASC) is" → "commission  ASC  is" (double-space).
+    _NORM9 = lambda s: re.sub(r" +", " ", re.sub(r"[^a-z0-9 ]", " ", s.lower())).strip()
+    _sgml_norm9 = _NORM9(sgml_blob)   # normalized SGML body (stripped, no tags)
+
+    _all_missing_keys9 = {m.get("text", "").lower()[:60] for m in all_missing}
+
+    for _ptext9 in pdf_data.paragraphs:
+        _pw9 = _ptext9.strip().split()
+        if len(_pw9) < _MIN_PARA9:
+            continue
+        _prefix9 = _pw9[:_PREFIX_LEN9]
+        _tail9   = _pw9[_PREFIX_LEN9:]
+        if len(_prefix9) < 3:
+            continue
+        # Strategy: check if the NORMALIZED FULL PREFIX PHRASE appears in SGML.
+        # Using the full phrase (not bigrams) prevents false positives from common
+        # sub-phrases like 'as of' or 'april 1' appearing elsewhere in the doc.
+        _prefix_phrase9 = _NORM9(" ".join(_prefix9))
+        _prefix_phrase9 = re.sub(r" +", " ", _prefix_phrase9).strip()
+        if _prefix_phrase9 in _sgml_norm9:
+            continue   # prefix phrase IS in SGML somewhere → no truncation
+
+        # Confirm the paragraph tail IS present in SGML (not just a mismatch)
+        _tail_content9 = [
+            w.lower().strip(".,;:\"'()") for w in _tail9 if len(w) >= 4
+        ]
+        if len(_tail_content9) < 5:
+            continue   # not enough tail words to judge
+        _found_tail9 = sum(1 for w in _tail_content9 if w in _sgml_norm9)
+        if _found_tail9 / len(_tail_content9) < 0.65:
+            continue   # tail also absent → completely different paragraph
+
+        _prefix_text9 = " ".join(_prefix9)
+        _key9 = _prefix_text9.lower()[:60]
+        if _key9 in _all_missing_keys9:
+            continue   # already flagged
+        _all_missing_keys9.add(_key9)
+
+        all_missing.append({
+            "text": _prefix_text9,
+            "location_hint": (
+                f"Paragraph prefix absent from SGML (truncation): "
+                f"PDF paragraph begins with '{_prefix_text9}' "
+                f"but this opening is missing from the SGML. "
+                f"Paragraph body present at {_found_tail9}/{len(_tail_content9)} words."
+            ),
+            "confidence": 0.80,
+            "severity": "major",
+        })
+        result.warnings.append(
+            f"D3: Paragraph prefix truncated in SGML: '{_prefix_text9[:80]}'"
+        )
 
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]

@@ -1300,6 +1300,67 @@ def check_text_semantic(
                 )
                 _seen_heading_texts.add(_ph.lower()[:60])
 
+    # ── Fix #6: PDF paragraph → SGML TI presence check ───────────────────────
+    # When a <TI> element is deleted from the SGML, its text still appears in
+    # the PDF as a standalone paragraph.  We scan short heading-like PDF
+    # paragraphs and flag any that are:
+    #   (a) NOT present in any SGML <TI> element, AND
+    #   (b) NOT present anywhere in the stripped SGML body text
+    # Pre-existing clean-run flags cancel in _detect_corruption (same as Fix
+    # #5b/c), so false positives do not produce false alarms.
+
+    _sgml_ti_re6 = re.compile(r'<TI[^>]*>(.*?)</TI>', re.IGNORECASE | re.DOTALL)
+    _sgml_ti_set6: set[str] = set()
+    for _tim in _sgml_ti_re6.finditer(sgml_blob):
+        _ti_norm = _strip_tags(_tim.group(1)).strip().lower()
+        if _ti_norm:
+            _sgml_ti_set6.add(_ti_norm[:120])
+    # Also include headings already extracted via _extract_sgml_sections
+    for _sec in sgml_sections:
+        _h6 = _sec.get("heading", "").strip().lower()
+        if _h6:
+            _sgml_ti_set6.add(_h6[:120])
+
+    _sgml_stripped_lower = _strip_tags(sgml_blob).lower()
+    _TRAIL_PUNCT6 = re.compile(r'[.!?:;,)\u2019\u201d]$')
+    _seen_h6: set[str] = {m.get("text", "").lower()[:60] for m in all_missing}
+
+    for _para6 in pdf_data.paragraphs:
+        _para6 = _para6.strip()
+        _words6 = _para6.split()
+        # Length filter: heading-like paragraphs are short
+        if not (2 <= len(_words6) <= 20):
+            continue
+        # Must start with uppercase letter
+        if not _para6[0].isupper():
+            continue
+        # Must not end with sentence-terminating punctuation
+        if _TRAIL_PUNCT6.search(_para6):
+            continue
+        # Must have ≥2 alphabetic words (filter page numbers, bullets, etc.)
+        _alpha6 = [w for w in _words6 if re.match(r'[a-zA-Z]{3,}', w)]
+        if len(_alpha6) < 2:
+            continue
+        _para6_norm = _para6.lower()[:120]
+        # (a) Skip if already matched to a SGML TI element
+        if any(_para6_norm in _ti6 or _ti6 in _para6_norm
+               for _ti6 in _sgml_ti_set6 if _ti6):
+            continue
+        # (b) Skip if text appears anywhere in the stripped SGML body
+        if _para6.lower() in _sgml_stripped_lower:
+            continue
+        # Skip if already flagged in this run
+        if _para6_norm[:60] in _seen_h6:
+            continue
+        all_missing.append({
+            "text": _para6,
+            "location_hint": "PDF paragraph (likely heading) absent from SGML",
+            "confidence": 0.80,
+            "severity": "major",
+        })
+        result.warnings.append(f"D3: Heading absent from SGML: {_para6[:80]}")
+        _seen_h6.add(_para6_norm[:60])
+
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]
     result.word_gaps = [

@@ -1152,16 +1152,31 @@ def check_text_semantic(
         if pa["original_pdf"][:60].lower() not in llm_altered_pdfs:
             all_altered.append(pa)
 
-    # ── Deterministic regulatory number check (Fix #4 + multi-occurrence) ────
+    # ── Deterministic checks: helpers ────────────────────────────────────────
+    def _num_near_match(ps: str, ss: str) -> bool:
+        """True if 3-digit suffixes ps and ss represent the same number corruption:
+        • anagram  — same digits in different order (e.g. 103↔130)
+        • Hamming-1 — differ in exactly one position (e.g. 333↔334, catches
+          the diag_corrupt.py fallback that increments the last digit when all
+          digits are identical and no transposition is possible)
+        """
+        if ps == ss:
+            return False
+        if sorted(ps) == sorted(ss):                        # anagram (transposition)
+            return True
+        if sum(a != b for a, b in zip(ps, ss)) == 1:       # single-digit substitution
+            return True
+        return False
+
+    # ── Deterministic regulatory number check (Fix #4 + #5a) ─────────────────
     # Compare XX-YYY instrument number counts between full PDF and full SGML.
-    # Catches digit-transposition corruptions, including multi-occurrence docs
-    # where only one instance of a number was changed and the original still
-    # appears elsewhere (set-based check would miss this).
+    # Catches digit-transpositions AND single-digit substitutions (Fix #5a),
+    # including multi-occurrence docs where only one instance was changed.
     #
     # pdf_excess: numbers that appear MORE TIMES in PDF than SGML — meaning the
-    #   SGML may have had one occurrence changed to something else.
+    #   SGML may have had one occurrence swapped to something else.
     # sgml_only:  numbers that appear in SGML but not at all in PDF — these are
-    #   candidates for the replacement value introduced by corruption.
+    #   the likely replacement values introduced by corruption.
     _NUM_RE_D3 = re.compile(r"\b(\d{2})-(\d{3})\b")
     pdf_full_text = " ".join(pdf_data.paragraphs)
     _pdf_cnt  = Counter(m.group() for m in _NUM_RE_D3.finditer(pdf_full_text))
@@ -1174,7 +1189,7 @@ def check_text_semantic(
     _already_flagged: set[str] = set()
 
     def _flag_reg_number(pdf_num: str, sgml_num: str) -> None:
-        """Append one deterministic D3 alteration for a transposed reg number."""
+        """Append one deterministic D3 alteration for a substituted reg number."""
         if pdf_num.lower()[:20] in _llm_altered_set:
             return
         all_altered.append({
@@ -1187,7 +1202,7 @@ def check_text_semantic(
             f"D3: Regulatory number (deterministic): PDF={pdf_num} → SGML={sgml_num}"
         )
 
-    # Direction 1: numbers with MORE occurrences in PDF than SGML — one was swapped out
+    # Direction 1: numbers with MORE occurrences in PDF than SGML — one was swapped
     for _p in sorted(pdf_excess_d3):
         if _p in _already_flagged:
             continue
@@ -1196,16 +1211,16 @@ def check_text_semantic(
             _sp, _ss = _s.split("-")
             if _pp != _sp:
                 continue
-            if sorted(_ps) == sorted(_ss) and _ps != _ss:
+            if _num_near_match(_ps, _ss):
                 _flag_reg_number(_p, _s)
                 _already_flagged.add(_p)
                 _already_flagged.add(_s)
                 break
 
-    # Direction 2: numbers in SGML but absent from PDF entirely — look for an
-    # anagram in ANY PDF number.  This catches cases where the PDF extractor
-    # only sees the number once (so pdf_excess is empty) yet the SGML-only
-    # number is clearly a digit-transposition of a PDF number.
+    # Direction 2: numbers in SGML but absent from PDF entirely — look for a
+    # near-match (anagram OR Hamming-1) in ANY PDF number.  Catches cases where
+    # the PDF extractor only sees the number once (so pdf_excess is empty) yet
+    # the SGML-only number is clearly a digit-variant of a PDF number.
     for _s in sorted(sgml_only_d3):
         if _s in _already_flagged:
             continue
@@ -1216,11 +1231,74 @@ def check_text_semantic(
             _pp, _ps = _p.split("-")
             if _pp != _sp:
                 continue
-            if sorted(_ps) == sorted(_ss) and _ps != _ss:
+            if _num_near_match(_ps, _ss):
                 _flag_reg_number(_p, _s)
                 _already_flagged.add(_s)
                 _already_flagged.add(_p)
                 break
+
+    # ── Deterministic URL check (Fix #5b) ────────────────────────────────────
+    # URLs present in the PDF but absent from the SGML are flagged as missing
+    # content.  Pre-existing PDF/SGML URL mismatches (footers, publisher links)
+    # appear in BOTH the original and corrupted run's missing_paragraphs, so
+    # they cancel out in _detect_corruption's new_missing delta.
+    _URL_DET_RE = re.compile(
+        r"https?://[a-zA-Z0-9\-\./?&=_%+]{4,60}"
+        r"|www\.[a-zA-Z0-9\-]{2,40}\.[a-zA-Z]{2,6}[a-zA-Z0-9\-\./?&=_%+]{0,30}",
+        re.IGNORECASE,
+    )
+    def _norm_url(u: str) -> str:
+        """Lowercase, strip protocol prefix, strip trailing punctuation."""
+        u = re.sub(r"^https?://(?:www\.)?", "www.", u.lower())
+        return u.rstrip(".,;:)'\" /")
+
+    _pdf_urls  = {_norm_url(m.group()) for m in _URL_DET_RE.finditer(pdf_full_text)
+                  if len(m.group()) >= 8}
+    _sgml_urls = {_norm_url(m.group()) for m in _URL_DET_RE.finditer(sgml_blob)
+                  if len(m.group()) >= 8}
+    _seen_missing_urls = {m.get("text", "").lower() for m in all_missing}
+    for _url in sorted(_pdf_urls - _sgml_urls):
+        if _url and _url not in _seen_missing_urls:
+            all_missing.append({
+                "text": _url,
+                "location_hint": "URL present in PDF but absent from SGML",
+                "confidence": 0.85,
+                "severity": "minor",
+            })
+            result.warnings.append(f"D3: URL missing from SGML: {_url}")
+
+    # ── Deterministic heading check (Fix #5c) ────────────────────────────────
+    # Verify that every PDF heading is represented in the SGML section headings.
+    # Build a word pool from all SGML section headings; a PDF heading with less
+    # than 35% of its significant words (≥4 chars) found in that pool is likely
+    # absent from the SGML.  Pre-existing heading mismatches cancel out in
+    # new_missing just like the URL check above.
+    _sgml_heading_pool: set[str] = set()
+    for _sec in sgml_sections:
+        _sgml_heading_pool.update(
+            w.lower() for w in re.findall(r"[a-zA-Z]{4,}", _sec["heading"])
+        )
+    _seen_heading_texts = {m.get("text", "").lower()[:60] for m in all_missing}
+    for _ph in pdf_data.headings:
+        _ph = _ph.strip()
+        if len(_ph.split()) < 2:
+            continue   # skip single-word or empty headings
+        _ph_words = [w.lower() for w in re.findall(r"[a-zA-Z]{4,}", _ph)]
+        if not _ph_words:
+            continue
+        _overlap = sum(1 for w in _ph_words if w in _sgml_heading_pool)
+        if _overlap / len(_ph_words) < 0.35:
+            if _ph.lower()[:60] not in _seen_heading_texts:
+                all_missing.append({
+                    "text": _ph,
+                    "location_hint": "PDF section heading not found in SGML sections",
+                    "confidence": 0.80,
+                    "severity": "major",
+                })
+                result.warnings.append(
+                    f"D3: PDF heading missing from SGML: {_ph[:80]}"
+                )
+                _seen_heading_texts.add(_ph.lower()[:60])
 
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]

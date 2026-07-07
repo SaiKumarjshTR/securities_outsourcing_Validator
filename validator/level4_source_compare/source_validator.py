@@ -487,12 +487,15 @@ def _extract_pdf_data(pdf_path: str) -> _PDFData:
                     if block.get("type") == 1:
                         data.image_count += 1
                     continue
-                # GAP 3: Skip blocks in header zone (top 10%) or footer zone (bottom 8%).
+                # GAP 3: Skip blocks in header zone (top 7%) or footer zone (bottom 7%).
                 # These are running headers/footers that ABBYY already excludes from DOCX.
                 # Geometry-based filtering is more reliable than 100+ regex patterns.
+                # Fix #10: Tightened from 10%/92% → 7%/93% — body content can begin at
+                # 8–9% (e.g. "Effective Date" heading + paragraph at top of a content
+                # page); true running headers are < 6% from the top.
                 if _page_h > 0:
                     _bbox = block.get("bbox", (0, 0, 0, _page_h))
-                    if _bbox[1] / _page_h < 0.10 or _bbox[3] / _page_h > 0.92:
+                    if _bbox[1] / _page_h < 0.07 or _bbox[3] / _page_h > 0.93:
                         continue
                 for line in block.get("lines", []):
                     spans = line.get("spans", [])

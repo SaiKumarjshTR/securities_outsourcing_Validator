@@ -1489,6 +1489,76 @@ def check_text_semantic(
             f"D3: Paragraph prefix truncated in SGML: '{_prefix_text9[:80]}'"
         )
 
+    # ── Fix #10: Bullet-item presence check ──────────────────────────────────
+    # Detects when one item from a multi-item bullet list is deleted from the
+    # SGML while the rest of the list remains (Type K / ITEM deletion).
+    # The LLM misses this because the surrounding list is 99%+ present — it
+    # scores the section as "high fidelity".
+    #
+    # Algorithm:
+    #   For each PDF paragraph containing bullet markers (•, –, -, (a)-(z)):
+    #     1. Split at bullet markers → individual bullet items
+    #     2. For each item ≥ 8 content words:
+    #        a. Compute a normalised phrase (first 8 significant words)
+    #        b. If the phrase is absent from the full SGML text → flag it
+    #     3. Skip items already flagged by an earlier check
+    #
+    # False-positive guard: require ≥ 6 of the item's significant words to be
+    # absent from the SGML (not just the exact phrase), AND the parent paragraph
+    # must contain ≥ 2 bullet items (so single-bullet paragraphs are ignored).
+    _BULLET_SPLIT10 = re.compile(
+        r'\s*(?:•|–|—|\-{1,2}|(?<!\w)\([a-z]{1,2}\)|(?<!\w)[a-z]{1,2}\.\s)'
+        r'\s+'
+    )
+    _MIN_ITEM_WORDS10 = 8    # minimum words in a bullet item to check
+    _MIN_BULLETS10    = 2    # paragraph must have at least this many bullet items
+    _ABSENT_THRESH10  = 5    # how many significant words must be absent from SGML
+
+    _seen_b10: set[str] = {m.get("text", "").lower()[:60] for m in all_missing}
+    _sgml_norm10 = _NORM9(sgml_blob)  # reuse the normalized SGML from Fix #9
+
+    for _bpara10 in pdf_data.paragraphs:
+        # Only process paragraphs that have bullet-like markers
+        if not _BULLET_SPLIT10.search(_bpara10):
+            continue
+        _items10 = [i.strip() for i in _BULLET_SPLIT10.split(_bpara10) if i.strip()]
+        if len(_items10) < _MIN_BULLETS10:
+            continue  # need at least 2 items to detect a deletion
+        for _item10 in _items10:
+            _words10 = _item10.split()
+            if len(_words10) < _MIN_ITEM_WORDS10:
+                continue  # item too short to reliably check
+            # Significant words: ≥4 chars, not stopwords
+            _sig10 = [
+                w.lower().strip(".,;:\"'()") for w in _words10
+                if len(w) >= 4
+            ]
+            if len(_sig10) < 5:
+                continue
+            # Dedup key: first 60 chars
+            _key10 = _item10.lower()[:60]
+            if _key10 in _seen_b10:
+                continue
+            # Count how many significant words are absent from the SGML
+            _norm_item10 = _NORM9(_item10)
+            _absent10 = sum(
+                1 for w in _sig10 if w not in _sgml_norm10
+            )
+            if _absent10 >= _ABSENT_THRESH10:
+                _seen_b10.add(_key10)
+                all_missing.append({
+                    "text": _item10[:200],
+                    "location_hint": (
+                        f"Bullet item present in PDF list but absent from SGML "
+                        f"({_absent10}/{len(_sig10)} key words missing)"
+                    ),
+                    "confidence": 0.80,
+                    "severity": "major",
+                })
+                result.warnings.append(
+                    f"D3: Bullet item absent from SGML: '{_item10[:80]}'"
+                )
+
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]
     result.word_gaps = [

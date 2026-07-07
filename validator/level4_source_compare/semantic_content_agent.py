@@ -56,6 +56,7 @@ import json
 import re
 import time
 import unicodedata
+from collections import Counter
 from typing import Optional
 
 import httpx
@@ -1151,18 +1152,26 @@ def check_text_semantic(
         if pa["original_pdf"][:60].lower() not in llm_altered_pdfs:
             all_altered.append(pa)
 
-    # ── Deterministic regulatory number check (Fix #4) ──────────────────────
-    # Compare XX-YYY instrument number patterns between full PDF and full SGML.
-    # Catches digit-transposition corruptions the LLM sometimes misses because
-    # numbers like "31-103" vs "31-130" look nearly identical in context.
+    # ── Deterministic regulatory number check (Fix #4 + multi-occurrence) ────
+    # Compare XX-YYY instrument number counts between full PDF and full SGML.
+    # Catches digit-transposition corruptions, including multi-occurrence docs
+    # where only one instance of a number was changed and the original still
+    # appears elsewhere (set-based check would miss this).
+    #
+    # pdf_excess: numbers that appear MORE TIMES in PDF than SGML — meaning the
+    #   SGML may have had one occurrence changed to something else.
+    # sgml_only:  numbers that appear in SGML but not at all in PDF — these are
+    #   candidates for the replacement value introduced by corruption.
     _NUM_RE_D3 = re.compile(r"\b(\d{2})-(\d{3})\b")
     pdf_full_text = " ".join(pdf_data.paragraphs)
-    pdf_nums_d3  = {m.group() for m in _NUM_RE_D3.finditer(pdf_full_text)}
-    sgml_nums_d3 = {m.group() for m in _NUM_RE_D3.finditer(sgml_blob)}
-    pdf_only_d3  = pdf_nums_d3  - sgml_nums_d3  # in PDF but not SGML
-    sgml_only_d3 = sgml_nums_d3 - pdf_nums_d3   # in SGML but not PDF
+    _pdf_cnt  = Counter(m.group() for m in _NUM_RE_D3.finditer(pdf_full_text))
+    _sgml_cnt = Counter(m.group() for m in _NUM_RE_D3.finditer(sgml_blob))
+    # PDF-excess: PDF has more occurrences than SGML (one was swapped out)
+    pdf_excess_d3 = {n for n, c in _pdf_cnt.items() if c > _sgml_cnt.get(n, 0)}
+    # SGML-only: present in SGML but absent from PDF (the swapped-in value)
+    sgml_only_d3  = set(_sgml_cnt.keys()) - set(_pdf_cnt.keys())
     _llm_altered_set = {a["original_pdf"][:20].lower() for a in all_altered}
-    for _p in sorted(pdf_only_d3):
+    for _p in sorted(pdf_excess_d3):
         _pp, _ps = _p.split("-")
         for _s in sorted(sgml_only_d3):
             _sp, _ss = _s.split("-")
@@ -1180,7 +1189,7 @@ def check_text_semantic(
                     result.warnings.append(
                         f"D3: Regulatory number (deterministic): PDF={_p} → SGML={_s}"
                     )
-                break  # one match per PDF orphan is enough
+                break  # one match per PDF-excess number is enough
 
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]

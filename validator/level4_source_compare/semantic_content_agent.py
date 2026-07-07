@@ -1171,25 +1171,56 @@ def check_text_semantic(
     # SGML-only: present in SGML but absent from PDF (the swapped-in value)
     sgml_only_d3  = set(_sgml_cnt.keys()) - set(_pdf_cnt.keys())
     _llm_altered_set = {a["original_pdf"][:20].lower() for a in all_altered}
+    _already_flagged: set[str] = set()
+
+    def _flag_reg_number(pdf_num: str, sgml_num: str) -> None:
+        """Append one deterministic D3 alteration for a transposed reg number."""
+        if pdf_num.lower()[:20] in _llm_altered_set:
+            return
+        all_altered.append({
+            "original_pdf": pdf_num,
+            "sgml_version": sgml_num,
+            "location_hint": f"Regulatory number: PDF={pdf_num} → SGML={sgml_num}",
+            "severity": "critical",
+        })
+        result.warnings.append(
+            f"D3: Regulatory number (deterministic): PDF={pdf_num} → SGML={sgml_num}"
+        )
+
+    # Direction 1: numbers with MORE occurrences in PDF than SGML — one was swapped out
     for _p in sorted(pdf_excess_d3):
+        if _p in _already_flagged:
+            continue
         _pp, _ps = _p.split("-")
         for _s in sorted(sgml_only_d3):
             _sp, _ss = _s.split("-")
             if _pp != _sp:
-                continue  # different numeric prefix — not a transposition
-            # Same prefix: check if suffixes are an anagram (digit rearrangement)
+                continue
             if sorted(_ps) == sorted(_ss) and _ps != _ss:
-                if _p.lower()[:20] not in _llm_altered_set:
-                    all_altered.append({
-                        "original_pdf": _p,
-                        "sgml_version": _s,
-                        "location_hint": f"Regulatory number: PDF={_p} → SGML={_s}",
-                        "severity": "critical",
-                    })
-                    result.warnings.append(
-                        f"D3: Regulatory number (deterministic): PDF={_p} → SGML={_s}"
-                    )
-                break  # one match per PDF-excess number is enough
+                _flag_reg_number(_p, _s)
+                _already_flagged.add(_p)
+                _already_flagged.add(_s)
+                break
+
+    # Direction 2: numbers in SGML but absent from PDF entirely — look for an
+    # anagram in ANY PDF number.  This catches cases where the PDF extractor
+    # only sees the number once (so pdf_excess is empty) yet the SGML-only
+    # number is clearly a digit-transposition of a PDF number.
+    for _s in sorted(sgml_only_d3):
+        if _s in _already_flagged:
+            continue
+        _sp, _ss = _s.split("-")
+        for _p in sorted(_pdf_cnt.keys()):
+            if _p in _already_flagged:
+                continue
+            _pp, _ps = _p.split("-")
+            if _pp != _sp:
+                continue
+            if sorted(_ps) == sorted(_ss) and _ps != _ss:
+                _flag_reg_number(_p, _s)
+                _already_flagged.add(_s)
+                _already_flagged.add(_p)
+                break
 
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]

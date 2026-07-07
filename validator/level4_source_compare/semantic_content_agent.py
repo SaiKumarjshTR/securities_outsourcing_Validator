@@ -1363,6 +1363,38 @@ def check_text_semantic(
         result.warnings.append(f"D3: Heading absent from SGML: {_para6[:80]}")
         _seen_h6.add(_para6_norm[:60])
 
+    # ── Fix #7: <TI> element count telemetry + structural shortage check ──────
+    # Strategy A — Telemetry (always emitted):
+    #   Emit the raw <TI> count in a warning so the diagnostic assessment can
+    #   compare orig_ti_count vs corr_ti_count.  If the count drops between the
+    #   clean run and the corrupted run, a heading was deleted.  This covers ALL
+    #   document types regardless of BLOCK/POLIDENT/APPENDIX structure.
+    #
+    # Strategy B — Per-BLOCK structural shortage (production use):
+    #   For each BLOCK2/3/1 section, check if it contains a <TI> element.  A
+    #   BLOCK without a TI is a structural violation of the Carswell DTD.  This
+    #   fires without needing an orig baseline — useful in production.
+    #   Note: POLIDENT's document-title TI is excluded from BLOCK count.
+    if raw_sgml:
+        _ti_count7 = len(re.findall(r"<TI[\s>]", raw_sgml, re.IGNORECASE))
+        # Always emit TI count for delta comparison in _detect_corruption
+        result.warnings.append(f"D3/info: SGML TI count: {_ti_count7}")
+
+        # Strategy B: per-BLOCK TI check
+        _block_parts7 = re.split(r"(?=<BLOCK[123][\s>])", raw_sgml, flags=re.IGNORECASE)
+        _blocks_no_ti7 = 0
+        for _bp7 in _block_parts7[1:]:   # skip preamble before first BLOCK
+            # Find end of this BLOCK section (first closing tag)
+            _end7 = re.search(r"</BLOCK[123]>", _bp7, re.IGNORECASE)
+            _content7 = _bp7[:_end7.end()] if _end7 else _bp7[:3000]
+            if not re.search(r"<TI[\s>]", _content7, re.IGNORECASE):
+                _blocks_no_ti7 += 1
+        if _blocks_no_ti7 > 0:
+            result.warnings.append(
+                f"D3: TI shortage: {_blocks_no_ti7} BLOCK section(s) missing "
+                f"a <TI> heading element — likely deleted"
+            )
+
     # ── Aggregate into L4Result ───────────────────────────────────────────────
     result.missing_paragraphs = [m["text"] for m in all_missing]
     result.word_gaps = [

@@ -1528,7 +1528,7 @@ def check_text_semantic(
             _words10 = _item10.split()
             if len(_words10) < _MIN_ITEM_WORDS10:
                 continue  # item too short to reliably check
-            # Significant words: ≥4 chars, not stopwords
+            # Significant words: ≥4 chars
             _sig10 = [
                 w.lower().strip(".,;:\"'()") for w in _words10
                 if len(w) >= 4
@@ -1539,20 +1539,28 @@ def check_text_semantic(
             _key10 = _item10.lower()[:60]
             if _key10 in _seen_b10:
                 continue
-            # Count how many significant words are absent from the SGML
-            _norm_item10 = _NORM9(_item10)
-            _absent10 = sum(
-                1 for w in _sig10 if w not in _sgml_norm10
-            )
-            if _absent10 >= _ABSENT_THRESH10:
+            # Phase 1: phrase check — first 12 actual words (including function
+            # words) as a phrase. This is precise: the exact word-sequence of a
+            # deleted item will be absent from the normalized SGML, while items
+            # still present (or table-of-contents references) will be found.
+            _phrase10 = _NORM9(" ".join(_words10[:12]))
+            _phrase_absent10 = len(_phrase10) >= 20 and _phrase10 not in _sgml_norm10
+            # Phase 2: fallback word-count check (for items where phrase
+            # is too short or ambiguous)
+            _absent10 = sum(1 for w in _sig10 if w not in _sgml_norm10)
+            if _phrase_absent10 or _absent10 >= _ABSENT_THRESH10:
                 _seen_b10.add(_key10)
+                _reason10 = (
+                    "phrase absent from SGML" if _phrase_absent10
+                    else f"{_absent10}/{len(_sig10)} key words missing"
+                )
                 all_missing.append({
                     "text": _item10[:200],
                     "location_hint": (
                         f"Bullet item present in PDF list but absent from SGML "
-                        f"({_absent10}/{len(_sig10)} key words missing)"
+                        f"({_reason10})"
                     ),
-                    "confidence": 0.80,
+                    "confidence": 0.85 if _phrase_absent10 else 0.80,
                     "severity": "major",
                 })
                 result.warnings.append(

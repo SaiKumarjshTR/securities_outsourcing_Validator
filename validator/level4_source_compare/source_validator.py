@@ -493,16 +493,20 @@ def _extract_pdf_data(pdf_path: str) -> _PDFData:
                 # Fix #10: Tightened from 10%/92% → 7%/93% — body content can begin at
                 # 8–9% (e.g. "Effective Date" heading + paragraph at top of a content
                 # page); true running headers are < 6% from the top.
-                # Gray zone (7–10%): filter only blocks with < 10 words — these are
-                # logo text, taglines, and exchange branding that appear near the top
-                # on some pages. Substantive body paragraphs have ≥ 10 words.
+                # Zone filter: skip running headers / footers.
+                # • Strict zones: top < 7% or bottom > 97% → always skip.
+                # • Gray zones: top 7–10% or bottom 93–97% → skip only if
+                #   block has < 10 words (logos, taglines, page numbers).
+                #   Long blocks (≥ 10 words) in these zones are body paragraphs
+                #   that happen to start near the top or extend near the bottom
+                #   (e.g., content crossing a page break).
                 if _page_h > 0:
                     _bbox = block.get("bbox", (0, 0, 0, _page_h))
                     _y_top = _bbox[1] / _page_h
                     _y_bot = _bbox[3] / _page_h
-                    if _y_top < 0.07 or _y_bot > 0.93:
+                    if _y_top < 0.07 or _y_bot > 0.97:
                         continue
-                    if _y_top < 0.10:
+                    if _y_top < 0.10 or _y_bot > 0.93:
                         # Gray zone: only skip short non-sentence blocks
                         _gz_words = sum(
                             len(s["text"].split())

@@ -1,7 +1,8 @@
 # TR SGML Validator
 
-Deterministic SGML validation tool for Carswell/TR legal publishing pipeline.  
-Validates pipeline-generated SGML files against their source PDFs across four scoring levels.
+SGML validation tool for Carswell/TR legal publishing pipeline.  
+Validates pipeline-generated SGML files against their source PDFs across four scoring levels.  
+L4 semantic content comparison uses Claude Opus (TR AI Platform) to detect content tampering with **93% detection rate** across UAT (276/296 test cases).
 
 ---
 
@@ -37,6 +38,7 @@ pip install -r requirements.txt
 | `PYTHONUTF8` | Yes | Set to `1` — always required on Windows |
 | `CORPUS_DIR` | Tests only | Path to folder with `.sgm` + `.pdf` pairs for regression tests |
 | `DECISIONS_FILE` | Optional | Override path for HITL decision log (default: `decisions/hitl_decisions.jsonl`) |
+| `TR_AI_SKIP_SSL` | Optional | Set to `1` to disable SSL verification for TR AI Platform (internal networks only) |
 
 ---
 
@@ -99,11 +101,16 @@ for issue in report.l4_result.issues:
 | **D8-b** | Paragraph truncation — SGML covers < 60% of a PDF paragraph's words |
 | **D8-c** | Short bold phrases (2–3 words) from PDF completely absent from SGML |
 | **D9** | Contact info gaps — phone numbers, email addresses, URLs in PDF but not SGML |
+| **Fix #12** | Detection threshold lowered 2.0 → 1.5 (catches subtle single-word tampering) |
+| **Fix #13** | Empty `<ITEM>` element detection — deleted list item content |
+| **Fix #14** | Year/decimal numeric substitution detection (e.g. 2023→2024, 1.5→1.6) |
+| **Fix #15** | Sentence 3-gram coverage check — flags sections with < 10% sentence coverage |
+| **Fix #16** | Section-scoped sentence LLM confirmation via Claude Opus (max 8 calls/doc) |
 
 ---
 
-## No External Service Dependencies
+## External Service Dependencies
 
-- No LLM / API calls
+- **TR AI Platform (Claude Opus)** — used by L4 `SemanticContentAgent` for semantic content comparison. Requires network access to `aiplatform.gcs.int.thomsonreuters.com`. Token is fetched automatically at runtime.
 - No ABBYY runtime required (DOCX path is optional; PDF-only validation is the default)
 - No hardcoded machine paths — all paths resolved relative to `config.py` or via env vars

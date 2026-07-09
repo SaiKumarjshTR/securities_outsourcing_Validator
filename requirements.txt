@@ -7,6 +7,11 @@
 # ── UI ────────────────────────────────────────────────────────────────────────
 streamlit>=1.35.0
 
+# ── LLM / AI Platform ────────────────────────────────────────────────────────
+anthropic>=0.49.0        # Claude API client (used by L4 SemanticContentAgent)
+httpx>=0.28.0            # HTTP client (used by Anthropic client + TR auth)
+requests>=2.33.0         # HTTP requests (TR AI Platform token exchange)
+
 # ── PDF extraction ────────────────────────────────────────────────────────────
 pymupdf>=1.24.0          # fitz — primary PDF text + layout extraction
 pdfplumber>=0.11.0       # fallback PDF extraction (tables, scanned)

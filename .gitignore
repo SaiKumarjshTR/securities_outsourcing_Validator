@@ -37,3 +37,7 @@ Thumbs.db
 htmlcov/
 .coverage
 .pytest_cache/
+# ── Local diagnostic / scratch scripts (not production code) ─────────────────
+_patch_fix*.py
+check_originals.py
+retest_missed.py

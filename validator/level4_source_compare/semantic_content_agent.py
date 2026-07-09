@@ -53,6 +53,7 @@ Auth: Same TR AI Platform pattern as batch_runner_standalone.py.
 from __future__ import annotations
 
 import json
+import os
 import re
 import time
 import unicodedata
@@ -96,7 +97,10 @@ def _get_client():
         if not token:
             return None
         from anthropic import Anthropic
-        _cached_client = Anthropic(api_key=token, http_client=httpx.Client(verify=False))
+        # TR_AI_SKIP_SSL=1 (default) → skip SSL verification (required on TR internal network)
+        # TR_AI_SKIP_SSL=0           → enable SSL verification (when TR CA is in cert store)
+        _ssl_verify = os.environ.get("TR_AI_SKIP_SSL", "1") != "1"
+        _cached_client = Anthropic(api_key=token, http_client=httpx.Client(verify=_ssl_verify))
         return _cached_client
     except Exception:
         return None

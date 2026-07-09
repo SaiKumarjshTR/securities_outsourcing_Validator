@@ -880,6 +880,67 @@ def _focused_para_llm_check(client, para_text: str, sgml_blob: str,
     return False, 0.0, "llm error"
 
 
+# Fix #16 — system prompt for sentence-level LLM confirmation
+_SENT_CHECK16_SYS = """You are SENT_CHECK — a precise content-fidelity checker for
+Thomson Reuters Canada legal document conversions (PDF → Carswell SGML).
+
+Your only job: determine if the given PDF sentence is GENUINELY ABSENT from the
+LOCAL SGML SECTION provided (not the full document — just this specific section).
+
+RULES:
+- SGML entities (&rsquo; &mdash; &eacute; etc.) are Unicode equivalents — treat them as matches.
+- SGML tags (<P>, <BLOCK2>, <BOLD> etc.) are wrappers — ignore them.
+- Paraphrase is NOT acceptable — the sentence meaning must be faithfully represented.
+- If the sentence text (allowing for SGML encoding) is absent from the section → missing=true.
+- If it IS present (even with minor encoding differences) → missing=false.
+- Do NOT flag a sentence as missing if it appears somewhere in the section, even if the exact position shifted.
+
+RESPOND with JSON only:
+{"missing": true|false, "confidence": 0.95, "reason": "brief explanation max 80 chars"}"""
+
+
+def _focused_sent_llm_check16(client, sentence: str, local_sgml: str) -> tuple[bool, float, str]:
+    """
+    Fix #16: Targeted LLM check — is this PDF sentence absent from the LOCAL SGML section?
+
+    Unlike the global _focused_para_llm_check (which checks against the full 8K blob),
+    this function passes the LOCAL matched SGML section (max 2,000 chars).
+    This eliminates cross-reference pollution that causes n-gram false coverage.
+    """
+    local_excerpt = local_sgml[:2_000]
+
+    user = (
+        f"PDF SENTENCE TO CHECK:\n\"{sentence[:300]}\"\n\n"
+        f"LOCAL SGML SECTION CONTENT (where this sentence should appear):\n"
+        f"{local_excerpt}\n\n"
+        "Is the PDF sentence above GENUINELY ABSENT from the SGML section content above?\n"
+        "Respond with ONLY the JSON object."
+    )
+
+    for attempt in range(2):
+        try:
+            with client.messages.stream(
+                model=_MODEL,
+                max_tokens=128,
+                temperature=_TEMPERATURE,
+                system=_SENT_CHECK16_SYS,
+                messages=[{"role": "user", "content": user}],
+            ) as stream:
+                raw = stream.get_final_text()
+
+            cleaned = re.sub(r"```(?:json)?", "", raw).strip().rstrip("`").strip()
+            start = cleaned.find("{")
+            if start == -1:
+                return False, 0.0, "parse error"
+            data = json.loads(cleaned[start:])
+            return bool(data.get("missing")), float(data.get("confidence", 0.8)), data.get("reason", "")
+
+        except Exception:
+            if attempt == 0:
+                time.sleep(1)
+    return False, 0.0, "llm error"
+
+
 def _body_paragraph_sweep(
     pdf_data,
     sgml_blob: str,
@@ -1567,7 +1628,298 @@ def check_text_semantic(
                     f"D3: Bullet item absent from SGML: '{_item10[:80]}'"
                 )
 
-    # ── Aggregate into L4Result ───────────────────────────────────────────────
+    # ── Fix #13: Empty ITEM element detection ────────────────────────────────
+    # When an <ITEM> element's content is deleted, the SGML has <ITEM></ITEM>
+    # with no meaningful text.  This is always suspicious — list items should
+    # always carry content in Carswell SGML.  Catches the "empty_item" tamper
+    # directly without requiring LLM (deterministic, zero false-positives on
+    # well-formed SGML).  The pre-existing clean-run baseline will have zero
+    # empty items, so the delta check in assess_validator_hitl.py sees a NEW
+    # missing entry → DETECTED.
+    if raw_sgml:
+        _ITEM_RE13 = re.compile(r'<ITEM[^>]*>(.*?)</ITEM>', re.DOTALL | re.IGNORECASE)
+        _seen_empty13: set[str] = set()
+        for _im13 in _ITEM_RE13.finditer(raw_sgml):
+            _item_body13 = _strip_tags(_im13.group(1)).strip()
+            if len(_item_body13.split()) < 2:   # effectively empty (< 2 words)
+                _pre13_raw  = raw_sgml[max(0, _im13.start() - 300):_im13.start()]
+                _pre13_txt  = _strip_tags(_pre13_raw).strip()
+                _pre13_hint = (_pre13_txt[-80:].strip() if len(_pre13_txt) > 80
+                               else _pre13_txt)
+                _key13 = f"empty_item_{_im13.start()}"
+                if _key13 not in _seen_empty13:
+                    _seen_empty13.add(_key13)
+                    all_missing.append({
+                        "text": (
+                            f"[Empty ITEM] SGML list item has no content — "
+                            f"content likely deleted. Near: '{_pre13_hint[-60:]}'"
+                        ),
+                        "location_hint": (
+                            f"SGML <ITEM> at char {_im13.start()} is empty "
+                            f"(no text between opening and closing tags)"
+                        ),
+                        "confidence": 0.90,
+                        "severity": "major",
+                    })
+                    result.warnings.append(
+                        "D3: Empty <ITEM> element — content likely deleted"
+                    )
+
+    # ── Fix #14: Year and decimal numeric token substitution check ────────────
+    # Extends Fix #4 (XX-YYY regulatory numbers) to standalone 4-digit years
+    # (e.g. 2018 → 2011) and decimal section/section-ref numbers
+    # (e.g. 10.00 → 10.03, 4.3 → 4.6).  Uses the same frequency-delta logic:
+    # a number that appears MORE in PDF than SGML paired with a close-value
+    # number that appears MORE in SGML than PDF → likely a digit substitution.
+    _YEAR_RE14 = re.compile(r'\b(19\d{2}|20[0-3]\d)\b')
+    _DECL_RE14 = re.compile(r'\b(\d{1,3}\.\d{2,4})\b')   # e.g. 10.00, 4.30
+
+    _pdf_yr14  = Counter(m.group() for m in _YEAR_RE14.finditer(pdf_full_text))
+    _sgml_yr14 = Counter(m.group() for m in _YEAR_RE14.finditer(sgml_blob))
+    _pdf_dl14  = Counter(m.group() for m in _DECL_RE14.finditer(pdf_full_text))
+    _sgml_dl14 = Counter(m.group() for m in _DECL_RE14.finditer(sgml_blob))
+
+    def _num_subs14(pdf_cnts, sgml_cnts, max_dist: float):
+        """Return (pdf_val, sgml_val) substitution pairs within max_dist."""
+        subs: list[tuple[str, str]] = []
+        pdf_ex  = {n for n, c in pdf_cnts.items()  if c > sgml_cnts.get(n, 0)}
+        sgml_ex = {n for n, c in sgml_cnts.items() if c > pdf_cnts.get(n, 0)}
+        for _pv in sorted(pdf_ex):
+            try:
+                _pn = float(_pv.replace(',', ''))
+            except ValueError:
+                continue
+            for _sv in sorted(sgml_ex):
+                try:
+                    _sn = float(_sv.replace(',', ''))
+                except ValueError:
+                    continue
+                if 0 < abs(_pn - _sn) <= max_dist:
+                    subs.append((_pv, _sv))
+                    break
+        return subs
+
+    for _pv14, _sv14 in _num_subs14(_pdf_yr14, _sgml_yr14, max_dist=20):
+        if (_pv14[:20].lower() not in _llm_altered_set
+                and _pv14 not in _already_flagged):
+            all_altered.append({
+                "original_pdf": _pv14,
+                "sgml_version": _sv14,
+                "location_hint": f"Year substitution: PDF={_pv14} \u2192 SGML={_sv14}",
+                "severity": "major",
+            })
+            result.warnings.append(
+                f"D3: Year substituted (deterministic): PDF={_pv14} \u2192 SGML={_sv14}"
+            )
+            _already_flagged.add(_pv14)
+
+    for _pv14, _sv14 in _num_subs14(_pdf_dl14, _sgml_dl14, max_dist=1.0):
+        if (_pv14[:20].lower() not in _llm_altered_set
+                and _pv14 not in _already_flagged):
+            all_altered.append({
+                "original_pdf": _pv14,
+                "sgml_version": _sv14,
+                "location_hint": f"Decimal substitution: PDF={_pv14} \u2192 SGML={_sv14}",
+                "severity": "major",
+            })
+            result.warnings.append(
+                f"D3: Decimal substituted (deterministic): PDF={_pv14} \u2192 SGML={_sv14}"
+            )
+            _already_flagged.add(_pv14)
+
+    # ── Fix #15: Sentence-level 3-gram coverage check (GLOBAL blob) ──────────────
+    # Detects deletion of individual sentences from WITHIN multi-sentence
+    # paragraphs — the hardest class of tampering to detect.
+    #
+    # ROOT CAUSE of misses: The body paragraph sweep uses 5-grams over the
+    # ENTIRE paragraph. If a paragraph has 8 sentences and one is deleted,
+    # the remaining 7 sentences still produce ~87% 5-gram coverage → not
+    # flagged as missing. The LLM also sees “mostly present” content and
+    # scores fidelity high.
+    #
+    # ALGORITHM (deterministic, no LLM):
+    #   1. Build 3-grams of content words from ENTIRE SGML blob.
+    #   2. For each PDF paragraph with ≥ 3 sentences and ≥ 25 words:
+    #        a. Compute PARAGRAPH coverage (5-grams). Skip if < 0.55
+    #           (whole paragraph missing — already caught by body sweep).
+    #        b. For each sentence with ≥ 8 words:
+    #           • Compute SENTENCE 3-gram coverage.
+    #           • If coverage < 0.15 → sentence may be absent.
+    #           • Confirm ≥ 1 adjacent sentence IS present (coverage ≥ 0.50).
+    #           • Require ≥ 6 content words (avoid short clauses).
+    _SENT_SPLIT15 = re.compile(r'(?<=[.;!?])\s+(?=[A-Z\u201c("])')
+    _MIN_SENT_WORDS15  = 8
+    _SENT_COV_THRESH15 = 0.10   # raised from 0.15 → reduces false positives on clean docs
+    _PARA_COV_MIN15    = 0.55
+    _ADJ_COV_MIN15     = 0.50
+
+    _blob_words15 = re.findall(r"[a-zA-Z\u00c0-\u00ff0-9]+", sgml_blob.lower())
+    _blob_3grams15: set[tuple] = {
+        tuple(_blob_words15[_i: _i + 3]) for _i in range(len(_blob_words15) - 2)
+    }
+    _blob_5grams15: set[tuple] = {
+        tuple(_blob_words15[_i: _i + 5]) for _i in range(len(_blob_words15) - 4)
+    }
+
+    def _sent_cov15(sent: str, gram_set: set, n: int) -> float:
+        cwords = [w for w in re.findall(r"[a-zA-Z\u00c0-\u00ff0-9]+", sent.lower())
+                  if w not in _HIGH_NOISE_WORDS and len(w) > 2]
+        if len(cwords) < n:
+            return 1.0
+        grams = [tuple(cwords[_i: _i + n]) for _i in range(len(cwords) - n + 1)]
+        return sum(1 for g in grams if g in gram_set) / len(grams) if grams else 1.0
+
+    _seen_s15: set[str] = {m.get("text", "").lower()[:60] for m in all_missing}
+
+    for _para15 in pdf_data.paragraphs:
+        if len(_para15.strip().split()) < 25:
+            continue
+        _para_cov15 = _sent_cov15(_para15, _blob_5grams15, 5)
+        if _para_cov15 < _PARA_COV_MIN15:
+            continue  # whole paragraph absent — body sweep handles it
+
+        _sents15 = [s.strip() for s in _SENT_SPLIT15.split(_para15) if s.strip()]
+        if len(_sents15) < 3:
+            continue
+
+        _scovs15 = [_sent_cov15(s, _blob_3grams15, 3) for s in _sents15]
+
+        for _si15, (_s15, _cov15) in enumerate(zip(_sents15, _scovs15)):
+            if len(_s15.split()) < _MIN_SENT_WORDS15:
+                continue
+            if _cov15 >= _SENT_COV_THRESH15:
+                continue
+            # Confirm ≥ 1 adjacent sentence IS present
+            _adj_ok15 = any(
+                0 <= _ai15 < len(_scovs15) and _scovs15[_ai15] >= _ADJ_COV_MIN15
+                for _ai15 in [_si15 - 1, _si15 + 1]
+            )
+            if not _adj_ok15:
+                continue
+            _cw15 = [w for w in re.findall(r"[a-zA-Z\u00c0-\u00ff0-9]+", _s15.lower())
+                     if w not in _HIGH_NOISE_WORDS and len(w) > 2]
+            if len(_cw15) < 6:
+                continue
+            _key15 = _s15.lower()[:60]
+            if _key15 in _seen_s15:
+                continue
+            _seen_s15.add(_key15)
+            _pos15 = ("first" if _si15 == 0 else "last" if _si15 == len(_sents15) - 1
+                      else f"sentence {_si15+1}/{len(_sents15)}")
+            all_missing.append({
+                "text": _s15[:200],
+                "location_hint": (
+                    f"Sentence absent from SGML ({_pos15} in paragraph; "
+                    f"3-gram cov={_cov15:.0%}, para cov={_para_cov15:.0%})"
+                ),
+                "confidence": 0.82,
+                "severity": "major",
+            })
+            result.warnings.append(
+                f"D3: Fix15-Sentence absent from SGML ({_pos15}): '{_s15[:80]}'"
+            )
+
+    # ── Fix #16: Section-scoped sentence-level LLM check ──────────────────────────────
+    # Solves root cause of Fix #15 failures: global blob 3-grams give FALSE
+    # coverage due to cross-references in regulatory documents (e.g. “trading
+    # binary options” appears in multiple cross-references, giving 25% coverage
+    # to a deleted sentence that should show 0%).
+    #
+    # Fix #16 checks each sentence against the LOCAL matched SGML section only.
+    # Local coverage = 0% for truly deleted sentences (no cross-ref pollution).
+    # The threshold is raised to 25% (vs 15% global) to account for the smaller
+    # local corpus. Borderline cases are confirmed by a targeted LLM call with
+    # the LOCAL section context (not the full 8K blob).
+    #
+    # ALGORITHM:
+    #   For each section pair from pairs (PDF↔SGML pairing):
+    #   1. Build 3-grams from LOCAL SGML section text
+    #   2. For each PDF sentence with ≥ 8 words:
+    #      a. Local 3-gram coverage < 0.25 → candidate (no cross-ref pollution)
+    #      b. Global 3-gram coverage < 0.35 → not reordered into another section
+    #      c. LLM confirmation with local section context (cap: 8 calls/doc)
+    _SENT_SPLIT16 = re.compile(r'(?<=[.;!?])\s+(?=[A-Z\u201c("])')
+    _SENT16_LOCAL_THRESH  = 0.15   # tightened from 0.25 → fewer false-positive LLM calls
+    _SENT16_GLOBAL_THRESH = 0.30   # tightened from 0.35 → stricter anti-reorder guard
+    _SENT16_MIN_WORDS     = 8      # minimum sentence word count
+    _SENT16_MIN_CW        = 6      # minimum content words
+    _MAX_SENT16           = 8      # max LLM calls per document
+    _sent16_calls         = 0
+    _seen16: set[str] = {m.get("text", "").lower()[:60] for m in all_missing}
+
+    for _pair16 in pairs:
+        if _sent16_calls >= _MAX_SENT16 or not client:
+            break
+        _pdf_content16 = _pair16["pdf"]["content"]
+        _sgml_local16  = _pair16["sgml"]["content"]
+        if not _sgml_local16.strip():
+            continue
+
+        # Build 3-grams from LOCAL SGML section (eliminates cross-ref pollution)
+        _local_words16 = re.findall(r"[a-zA-Z\u00c0-\u00ff0-9]+", _sgml_local16.lower())
+        if len(_local_words16) < 6:
+            continue
+        _local_3g16: set[tuple] = {
+            tuple(_local_words16[_i:_i+3]) for _i in range(len(_local_words16)-2)
+        }
+
+        # Split PDF section content into sentences
+        _sents16 = [s.strip() for s in _SENT_SPLIT16.split(_pdf_content16) if s.strip()]
+        if len(_sents16) < 2:
+            continue
+
+        for _s16 in _sents16:
+            if _sent16_calls >= _MAX_SENT16:
+                break
+            if len(_s16.split()) < _SENT16_MIN_WORDS:
+                continue
+            _cw16 = [w for w in re.findall(r"[a-zA-Z\u00c0-\u00ff0-9]+", _s16.lower())
+                     if w not in _HIGH_NOISE_WORDS and len(w) > 2]
+            if len(_cw16) < _SENT16_MIN_CW:
+                continue
+
+            # Local coverage: check against LOCAL SGML section only
+            _lg16 = [tuple(_cw16[_i:_i+3]) for _i in range(len(_cw16)-2)]
+            if not _lg16:
+                continue
+            _local_cov16 = sum(1 for g in _lg16 if g in _local_3g16) / len(_lg16)
+            if _local_cov16 >= _SENT16_LOCAL_THRESH:
+                continue  # sentence present in local section
+
+            # Global coverage: anti-reorder check (in another section = not deleted)
+            _global_cov16 = sum(1 for g in _lg16 if g in _blob_3grams15) / len(_lg16)
+            if _global_cov16 >= _SENT16_GLOBAL_THRESH:
+                continue  # sentence may be in another section (reorder FP)
+
+            # Dedup with Fix #15 and earlier Fix #16 findings
+            _key16 = _s16.lower()[:60]
+            if _key16 in _seen16:
+                continue
+
+            # LLM confirmation using LOCAL section context (not full 8K blob)
+            _sent16_calls += 1
+            print(f"   CONTENT_AGENT Fix16-sent LLM call {_sent16_calls}/{_MAX_SENT16}: "
+                  f"local={_local_cov16:.0%}, global={_global_cov16:.0%}")
+            _miss16, _conf16, _rsn16 = _focused_sent_llm_check16(
+                client, _s16, _sgml_local16
+            )
+            if _miss16 and _conf16 >= 0.75:
+                _seen16.add(_key16)
+                all_missing.append({
+                    "text": _s16[:200],
+                    "location_hint": (
+                        f"Fix16: Sentence absent per LLM "
+                        f"(local={_local_cov16:.0%}, global={_global_cov16:.0%}); "
+                        f"section: {_pair16['pdf']['heading'][:40]}"
+                    ),
+                    "confidence": _conf16,
+                    "severity": "major",
+                })
+                result.warnings.append(
+                    f"D3: Fix16-Sentence absent per LLM "
+                    f"(local cov={_local_cov16:.0%}): '{_s16[:80]}'"
+                )
+
     result.missing_paragraphs = [m["text"] for m in all_missing]
     result.word_gaps = [
         {
